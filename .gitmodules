@@ -1,0 +1,8 @@
+[submodule "open-logic"]
+	path = open-logic
+	url = https://github.com/rustyqt/open-logic.git
+	branch = feature/fault-tolerant-all-entities
+[submodule "uvvm"]
+	path = uvvm
+	url = https://github.com/UVVM/UVVM.git
+	shallow = true
