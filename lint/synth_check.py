@@ -2,8 +2,8 @@
 # Copyright (c) 2026 by Julian Schneider
 # Authors: Julian Schneider
 # ---------------------------------------------------------------------------------------------------
-"""Synthesis check of OpenRMAP with GHDL: elaborates orm_core as target and initiator, as target only and as
-initiator only.
+"""Synthesis check of OpenRMAP with GHDL: elaborates omap_core as Target and Initiator, as Target only and as
+Initiator only.
 
 Usage: python lint/synth_check.py
 Uses the libraries compiled by the regression runner (run `python run.py --compile` first).
@@ -19,9 +19,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 LIBS = ROOT / "vunit_out" / "ghdl" / "libraries"
-CONFIGS = [("orm_core", {"Target_g": "true", "Initiator_g": "true", "Passthrough_g": "true"}),
-           ("orm_core", {"Target_g": "true", "Initiator_g": "false", "Passthrough_g": "false"}),
-           ("orm_core", {"Target_g": "false", "Initiator_g": "true", "Passthrough_g": "true"})]
+CONFIGS = [("omap_core", {"Target_g": "true", "Initiator_g": "true", "Passthrough_g": "true"}),
+           ("omap_core", {"Target_g": "true", "Initiator_g": "false", "Passthrough_g": "false"}),
+           ("omap_core", {"Target_g": "false", "Initiator_g": "true", "Passthrough_g": "true"})]
 
 
 def synth(top, generics, out_dir):

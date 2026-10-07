@@ -8,7 +8,7 @@ document. This page lists the rules and the few OpenRMAP-specific additions.
 - The [Open Logic coding conventions](../open-logic/doc/Conventions.md) apply in full: port names
   `<Interface>_<Signal>`, generics `_g`, constants `_c`, variables `_v`, types `_t`, FSM types `<Name>Fsm_t` with
   states `_s`, functions in `lowerCamelCase`, four spaces of indentation, no tabs, no trailing whitespace.
-- Entities are named `orm_<function>` (for example `orm_tgt_rx`). All OpenRMAP sources are compiled into the VHDL
+- Entities are named `omap_<function>` (for example `omap_target_rx`). All OpenRMAP sources are compiled into the VHDL
   library `openrmap`; Open Logic is compiled into the library `olo`.
 - Language: VHDL-2008.
 - Entities with non-trivial state use the two-process pattern of Open Logic: all registers in one `TwoProcess_r`
@@ -30,7 +30,7 @@ document. This page lists the rules and the few OpenRMAP-specific additions.
   `vsg -c lint/config/vsg_config.yml -f <file>`. Safe automatic fixes:
   `vsg -c lint/config/vsg_config.yml --fix --fix_only lint/config/fix_only_config.yml -f <file>`.
 - The design must be synthesizable in a technology-independent way: `python lint/synth_check.py` elaborates
-  `orm_core` with the synthesis of GHDL (after `python run.py --compile`) and fails on errors and inferred latches.
+  `omap_core` with the synthesis of GHDL (after `python run.py --compile`) and fails on errors and inferred latches.
   `to_01` and other simulation-only functions are not used in RTL.
 - Traceability: every requirement of a specification is verified by at least one test case of the verification plan,
   every ECSS clause of the traceability matrix (architecture section 10) by the test cases of its requirements, and
@@ -61,7 +61,7 @@ its own unit testbench. `hdl/<module>/README.md` links the four documents and ex
   `if run("<test id>") then` block per test case of the verification plan. The test IDs of the plan and the names
   in `run(...)` are identical.
 - A test passes only when UVVM reports no unexpected alerts and every expected alert occurred
-  (`orm_tb_pkg.ormTestEnd`).
+  (`omap_tb_pkg.omapTestEnd`).
 - Tests observe ports and management interfaces only, never internal signals.
 - GHDL is the default simulator; QuestaSim (`python run.py --questa`) is used for code coverage
   ([coverage.md](coverage.md)). Every test passes in both simulators.

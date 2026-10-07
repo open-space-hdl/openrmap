@@ -27,26 +27,26 @@ Closure rules:
 
 ## 2. Result
 
-Run on 2026-10-07: 50 tests, all passed, 7 minutes with one simulator licence. Numbers are covered/total bins per
+Run on 2026-10-07: 50 tests, all passed, 6 minutes with one simulator licence. Numbers are covered/total bins per
 file; bold marks a metric with misses.
 
 | File | Statements | Branches | FSM States | FSM Transitions | Conditions | Expressions |
 | --- | --- | --- | --- | --- | --- | --- |
-| `orm_core/src/orm_core.vhd` | **81/83** | **4/6** |  |  |  |  |
-| `orm_core/src/orm_core_demux.vhd` | 74/74 | 54/54 | 5/5 | 8/8 | **15/16** |  |
-| `orm_core/src/orm_core_mux.vhd` | 27/27 | 12/12 |  |  | 5/5 | 11/11 |
-| `orm_ini/src/orm_ini.vhd` | 27/27 | 37/37 |  |  | 10/10 | **2/4** |
-| `orm_ini/src/orm_ini_rx.vhd` | 108/108 | 69/69 |  |  | **28/29** | 7/7 |
-| `orm_ini/src/orm_ini_tt.vhd` | 50/50 | 29/29 |  |  | **10/11** |  |
-| `orm_ini/src/orm_ini_tx.vhd` | 106/106 | 66/66 | 10/10 | 19/19 | 4/4 | 2/2 |
-| `orm_mib/src/orm_mib.vhd` | 185/185 | 95/95 |  |  | **18/19** |  |
-| `orm_pkg/src/orm_pkg.vhd` | 13/13 | 6/6 |  |  | 2/2 |  |
-| `orm_tgt/src/orm_tgt.vhd` | 18/18 | 2/2 |  |  |  |  |
-| `orm_tgt/src/orm_tgt_auth.vhd` | 53/53 | 37/37 |  |  | 26/26 | 3/3 |
-| `orm_tgt/src/orm_tgt_ctrl.vhd` | 268/268 | 164/164 | 16/16 | 43/43 | **65/74** | **7/10** |
-| `orm_tgt/src/orm_tgt_mem.vhd` | 56/56 | 47/47 |  |  | **41/48** | **4/6** |
-| `orm_tgt/src/orm_tgt_rx.vhd` | 89/89 | **66/67** |  |  | **14/15** | 6/6 |
-| `orm_tgt/src/orm_tgt_tx.vhd` | 84/84 | 44/44 | 8/8 | 16/16 | 3/3 | 2/2 |
+| `omap_core/src/omap_core.vhd` | **81/83** | **4/6** |  |  |  |  |
+| `omap_core/src/omap_core_demux.vhd` | 74/74 | 54/54 | 5/5 | 8/8 | **15/16** |  |
+| `omap_core/src/omap_core_mux.vhd` | 27/27 | 12/12 |  |  | 5/5 | 11/11 |
+| `omap_initiator/src/omap_initiator.vhd` | 27/27 | 37/37 |  |  | 10/10 | **2/4** |
+| `omap_initiator/src/omap_initiator_rx.vhd` | 108/108 | 69/69 |  |  | **28/29** | 7/7 |
+| `omap_initiator/src/omap_initiator_tt.vhd` | 50/50 | 29/29 |  |  | **10/11** |  |
+| `omap_initiator/src/omap_initiator_tx.vhd` | 106/106 | 66/66 | 10/10 | 19/19 | 4/4 | 2/2 |
+| `omap_mib/src/omap_mib.vhd` | 185/185 | 95/95 |  |  | **18/19** |  |
+| `omap_pkg/src/omap_pkg.vhd` | 13/13 | 6/6 |  |  | 2/2 |  |
+| `omap_target/src/omap_target.vhd` | 18/18 | 2/2 |  |  |  |  |
+| `omap_target/src/omap_target_auth.vhd` | 53/53 | 37/37 |  |  | 26/26 | 3/3 |
+| `omap_target/src/omap_target_ctrl.vhd` | 268/268 | 164/164 | 16/16 | 43/43 | **65/74** | **7/10** |
+| `omap_target/src/omap_target_mem.vhd` | 56/56 | 47/47 |  |  | **41/48** | **4/6** |
+| `omap_target/src/omap_target_rx.vhd` | 89/89 | **66/67** |  |  | **14/15** | 6/6 |
+| `omap_target/src/omap_target_tx.vhd` | 84/84 | 44/44 | 8/8 | 16/16 | 3/3 | 2/2 |
 | Total | 1239/1241 (99.8 %) | 732/735 (99.6 %) | 39/39 (100.0 %) | 86/86 (100.0 %) | 241/262 (92.0 %) | 44/51 (86.3 %) |
 
 ## 3. Gaps found and closed
@@ -58,7 +58,7 @@ design defect and terms that cannot change a result.
 | Gap | Resolution |
 | --- | --- |
 | Initiator: a command whose reply had been related to it stayed in the transaction table until the handshake of its confirmation; when the user held the confirmation, or the reply data took longer than the remaining timeout, the timer expired and the command was confirmed twice, with the reply and with a timeout | Design fix: the entry is removed in the cycle of the lookup (IN-TT-01). TC-IN-05 extended: confirmations held by the user, no timeout of the confirmed command; the test fails with the previous design |
-| Reset in the middle of a command or request: 24 reset transitions of the state machines of the target and the initiator | New requirements TG-IF-06 and IN-IF-05, new tests TC-TG-16 (reset in each of the first 140 cycles of five commands, internal and external authorisation) and TC-IN-08 (reset in each of the first 80 cycles of three request situations) |
+| Reset in the middle of a command or request: 24 reset transitions of the state machines of the Target and the Initiator | New requirements TG-IF-06 and IN-IF-05, new tests TC-TG-16 (reset in each of the first 140 cycles of five commands, internal and external authorisation) and TC-IN-08 (reset in each of the first 80 cycles of three request situations) |
 | Target: rejected command with an EEP immediately after the header; external rejection together with early EOP, excess data and Data CRC error, and without reply bit; reply requested while the encoder still sends the previous one; full write buffer; early EOP while committed chunks are still written; single errors in the write and read data of the AXI master | TC-TG-05, 09, 12, 14 and 15 extended |
 | Initiator: held confirmations (reply, rejection, timeout); rejected read request; late data of a rejected request; read reply ending after the Header CRC | TC-IN-03, 04 and 05 extended |
 | Register file: unused fourth word of a window | TC-MB-02 extended |
@@ -68,18 +68,19 @@ design defect and terms that cannot change a result.
 The remaining condition and expression misses fall into three groups, none of them behaviour without a test:
 
 - Terms masked by construction: the EDAC flags of a buffer are defined only together with its valid signal
-  (`orm_tgt_ctrl.vhd` lines 706 and 707, `orm_tgt_mem.vhd` lines 259 and 260); a confirmation source keeps its valid
-  signal until its handshake (`orm_ini.vhd` lines 298 and 299); a lookup never relates a reply to an expired entry
-  (`orm_ini_tt.vhd` line 142); the channel of an injection command is never negative (`orm_mib.vhd` line 281); the end
-  of the packet is presented only when no data byte is pending (`orm_tgt_rx.vhd` line 287).
+  (`omap_target_ctrl.vhd` lines 706 and 707, `omap_target_mem.vhd` lines 259 and 260); a confirmation source keeps its
+  valid signal until its handshake (`omap_initiator.vhd` lines 298 and 299); a lookup never relates a reply to an
+  expired entry (`omap_initiator_tt.vhd` line 142); the channel of an injection command is never negative
+  (`omap_mib.vhd` line 281); the end of the packet is presented only when no data byte is pending (`omap_target_rx.vhd`
+  line 287).
 - Gaps of an input stream in the cycle of a particular character: a gap before the end marker of a discarded packet
-  (`orm_core_demux.vhd` line 269, `orm_ini_rx.vhd` line 294). The handshakes themselves are covered with gaps and
-  backpressure in the stress tests.
-- Coincidences with the memory interface: the memory interface still busy, or a memory command still pending, when
-  the last byte of a read, a read-modify-write or a write has been transferred (`orm_tgt_ctrl.vhd` lines 242, 431,
-  500, 586, 617 and 682, `orm_tgt_mem.vhd` lines 174, 213, 222, 226 and 255). The AXI master is idle when the last
-  byte has passed it in every test, also with 90 % backpressure of the memory; the conditions are the safe order of
-  the completion and are kept.
+  (`omap_core_demux.vhd` line 269, `omap_initiator_rx.vhd` line 294). The handshakes themselves are covered with gaps
+  and backpressure in the stress tests.
+- Coincidences with the memory interface: the memory interface still busy, or a memory command still pending, when the
+  last byte of a read, a read-modify-write or a write has been transferred (`omap_target_ctrl.vhd` lines 242, 431, 500,
+  586, 617 and 682, `omap_target_mem.vhd` lines 174, 213, 222, 226 and 255). The AXI master is idle when the last byte
+  has passed it in every test, also with 90 % backpressure of the memory; the conditions are the safe order of the
+  completion and are kept.
 
 ## 4. Remaining misses
 
@@ -88,8 +89,8 @@ for:
 
 | Location | Item not covered | Justification |
 | --- | --- | --- |
-| `orm_core/src/orm_core.vhd:189` to `191` | Statements and branches of the function `choose` | The function selects generics of the register file (number of windows and transactions of an absent target or initiator); QuestaSim evaluates it during elaboration, before coverage is collected. The results are checked through the GENERICS register in TC-CO-05 and TC-CO-06. |
-| `orm_tgt/src/orm_tgt_rx.vhd:253` | Branch: end of the packet presented and not taken by the controller | Defensive handshake. The controller takes the end of the packet in every state that follows the handshake of the header (WrData, RdWait, RmwData, Drain), and the decoder presents the end only after that handshake. |
+| `omap_core/src/omap_core.vhd:189` to `191` | Statements and branches of the function `choose` | The function selects generics of the register file (number of windows and transactions of an absent Target or Initiator); QuestaSim evaluates it during elaboration, before coverage is collected. The results are checked through the GENERICS register in TC-CO-05 and TC-CO-06. |
+| `omap_target/src/omap_target_rx.vhd:253` | Branch: end of the packet presented and not taken by the controller | Defensive handshake. The controller takes the end of the packet in every state that follows the handshake of the header (WrData, RdWait, RmwData, Drain), and the decoder presents the end only after that handshake. |
 
 ## 5. Reproduction
 

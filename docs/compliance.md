@@ -70,10 +70,10 @@ reference included).
 
 | Module | Requirements | Verified by a test case | Without a test case |
 | --- | --- | --- | --- |
-| `orm_core` | 11 | 11 | - |
-| `orm_ini` | 16 | 16 | - |
-| `orm_mib` | 12 | 12 | - |
-| `orm_pkg` | 4 | 4 | - |
-| `orm_tgt` | 31 | 31 | - |
+| `omap_core` | 11 | 11 | - |
+| `omap_initiator` | 16 | 16 | - |
+| `omap_mib` | 12 | 12 | - |
+| `omap_pkg` | 4 | 4 | - |
+| `omap_target` | 31 | 31 | - |
 
 Requirements: 74; without a test case: 0; test cases of the plans not run by a testbench: 0.

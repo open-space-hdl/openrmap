@@ -1,17 +1,17 @@
 # OpenRMAP User Guide
 
-This guide describes how to integrate the OpenRMAP core `orm_core` into an FPGA design: sources, generics, clock and
+This guide describes how to integrate the OpenRMAP core `omap_core` into an FPGA design: sources, generics, clock and
 reset, interfaces, the programming sequence, the integration constraints and the conformance statement with the
 product characteristics of ECSS-E-ST-50-52C clause 5.8. The architecture is described in
 [architecture.md](architecture.md), the registers in the generated
-[register map](../hdl/orm_mib/docs/register_map.md).
+[register map](../hdl/omap_mib/docs/register_map.md).
 
 ## 1. Sources
 
 | Library | Sources | Order |
 | --- | --- | --- |
 | `olo` | Open Logic areas `base`, `axi` and `ft` of the submodule `open-logic/` | `open-logic/compile_order.txt` |
-| `openrmap` | `hdl/<module>/src/*.vhd` of every module of `component_list.txt` | Modules in the order of `component_list.txt`; within a module packages first (`orm_pkg.vhd`, `orm_regs_pkg.vhd`) |
+| `openrmap` | `hdl/<module>/src/*.vhd` of every module of `component_list.txt` | Modules in the order of `component_list.txt`; within a module packages first (`omap_pkg.vhd`, `omap_regs_pkg.vhd`) |
 
 All sources are VHDL-2008 and contain no vendor primitive. `tools/synth_vivado.py` shows a complete source list and
 the clock constraint for AMD Vivado.
@@ -20,22 +20,22 @@ the clock constraint for AMD Vivado.
 
 | Generic | Default | Description |
 | --- | --- | --- |
-| `Target_g`, `Initiator_g` | true | Node type: target and initiator, target only or initiator only (ECSS 5.7.1). At least one must be true |
+| `Target_g`, `Initiator_g` | true | Node type: Target and Initiator, Target only or Initiator only (ECSS 5.7.1). At least one must be true |
 | `Passthrough_g` | true | User port for packets of other protocols; without it they are discarded and counted |
 | `AxiAddrWidth_g` | 32 | Address width of the memory interface (12 to 40). RMAP address bits above it must be zero |
 | `AxiDataWidth_g` | 32 | Data width of the memory interface (8 to 1024, power of 2); the memory word of single-address accesses |
 | `AxiMaxBeats_g` | 16 | Maximum burst length of the memory interface |
 | `BufferBytes_g` | 256 | Write buffer: maximum Data Length of a verified write |
 | `ChunkBytes_g` | 32 | Chunk of a non-verified write that is written to memory once it is complete in the buffer |
-| `Windows_g` | 4 | Address windows of the target (0 to 8) |
+| `Windows_g` | 4 | Address windows of the Target (0 to 8) |
 | `ExtAuth_g` | false | External authorisation port |
 | `TgtAddrBytes_g` | 8 | Maximum length of the Target SpaceWire Address of a request (0 to 16) |
-| `Transactions_g` | 8 | Entries of the transaction table of the initiator (0 to 64); 0 without table and timeout |
-| `La0_g`, `La1_g` | 0xFE | Reset values of the two logical addresses of the target; LA0 is enabled, LA1 disabled after reset |
+| `Transactions_g` | 8 | Entries of the transaction table of the Initiator (0 to 64); 0 without table and timeout |
+| `La0_g`, `La1_g` | 0xFE | Reset values of the two logical addresses of the Target; LA0 is enabled, LA1 disabled after reset |
 | `DefLaEn_g` | '1' | Reset value of the enable of the default logical address 0xFE |
-| `Key_g` | 0x00 | Reset value of the key of the target (checked after reset) |
+| `Key_g` | 0x00 | Reset value of the key of the Target (checked after reset) |
 | `TickCycles_g`, `Timeout_g` | 99, 0 | Reset values of the tick period minus one (in cycles) and of the reply timeout (in ticks, 0 disables it) |
-| `WinInit_g` | window 0 open | Reset values of the windows (`WinCfgArray_t` of `orm_pkg`) |
+| `WinInit_g` | window 0 open | Reset values of the windows (`WinCfgArray_t` of `omap_pkg`) |
 
 With the defaults a core accepts every command to 0xFE with key 0x00 on the whole address space after reset, so a
 node works without software. A flight configuration narrows the windows with `WinInit_g` or by software.
@@ -101,24 +101,24 @@ with error 2.
 ### 4.6 Register file and interrupt
 
 `S_AxiLite_*` is an AXI4-Lite slave with a 10-bit byte address and 32-bit registers; `Irq` is the OR of the enabled
-event flags. The register map is in [register_map.md](../hdl/orm_mib/docs/register_map.md), the C header in
-`sw/orm_regs.h`.
+event flags. The register map is in [register_map.md](../hdl/omap_mib/docs/register_map.md), the C header in
+`sw/omap_regs.h`.
 
 ## 5. Programming sequence
 
-1. Read ID (0x4F524D01) and GENERICS to identify the core and its configuration.
+1. Read ID (0x4F4D4101) and GENERICS to identify the core and its configuration.
 2. Target: write the logical addresses and their enables (TGT_LA), the key (TGT_KEY) and the address windows
    (WIN_BASE, WIN_LAST, then WIN_CTRL with the permissions and ENABLE).
 3. Initiator: write the tick period and the reply timeout (INI_TIMEOUT).
 4. Write IRQ_EN for the events of interest; clear EVENTS by writing ones.
-5. In operation read the counters (cleared by a write), TGT_LAST for the last command of the target and ECC_STATUS
+5. In operation read the counters (cleared by a write), TGT_LAST for the last command of the Target and ECC_STATUS
    and ECC_COUNT for the EDAC of the buffers.
 
 ## 6. Integration constraints
 
 | Constraint | Reason |
 | --- | --- |
-| Two nodes that are initiator and target of each other on one link need `Transactions_g` = 1 (one outstanding command with reply per initiator), or receive buffering in front of each core for the commands the other node can have outstanding | A target receives the next command only after its reply has been sent, and a reply waits behind a command of the own initiator. With several outstanding commands in both directions both targets can wait while each link carries a command the other target does not take ([orm_core architecture](../hdl/orm_core/docs/architecture.md), section 4) |
+| Two nodes that are Initiator and Target of each other on one link need `Transactions_g` = 1 (one outstanding command with reply per Initiator), or receive buffering in front of each core for the commands the other node can have outstanding | A Target receives the next command only after its reply has been sent, and a reply waits behind a command of the own Initiator. With several outstanding commands in both directions both Targets can wait while each link carries a command the other Target does not take ([omap_core architecture](../hdl/omap_core/docs/architecture.md), section 4) |
 | `M_RepData_*`, `M_Conf_*` and `M_User_*` must be served | A stalled output stalls the received packet stream and the link |
 | RMAP address bits above `AxiAddrWidth_g` must be zero in the windows | Such commands are rejected with status 10 |
 
@@ -135,7 +135,7 @@ SpaceWire Protocols Standard (ECSS-E-ST-50-52)." With `Target_g` false: "This pr
 Initiator only specification of the ECSS SpaceWire Protocols Standard (ECSS-E-ST-50-52)."
 
 The [compliance matrix](compliance.md) lists the requirements and test cases of every clause. The product
-characteristics of the target (ECSS 5.8.2.3b, 5.8.2.4b, 5.8.2.5b) follow; values in brackets are generics or
+characteristics of the Target (ECSS 5.8.2.3b, 5.8.2.4b, 5.8.2.5b) follow; values in brackets are generics or
 registers.
 
 ### 7.1 Write command (ECSS Table 5-6)

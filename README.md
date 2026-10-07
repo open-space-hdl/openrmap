@@ -1,9 +1,9 @@
 # OpenRMAP
 
 OpenRMAP is an open Remote Memory Access Protocol (RMAP) implementation that is based on the Open Logic VHDL
-Library. It implements an RMAP target and an RMAP initiator according to ECSS-E-ST-50-52C (SpaceWire: Remote memory
-access protocol) and connects to the packet ports of a SpaceWire port such as the OpenWire core. The target accesses
-its memory through an AXI4 master; the initiator takes requests and returns confirmations on AXI4-Stream style
+Library. It implements an RMAP Target and an RMAP Initiator according to ECSS-E-ST-50-52C (SpaceWire: Remote memory
+access protocol) and connects to the packet ports of a SpaceWire port such as the OpenWire core. The Target accesses
+its memory through an AXI4 master; the Initiator takes requests and returns confirmations on AXI4-Stream style
 interfaces; configuration, status and error information are in a register file behind an AXI4-Lite port. All
 buffers use the fault-tolerant entities of [Open Logic](https://github.com/open-logic/open-logic) (SECDED ECC).
 
@@ -27,7 +27,7 @@ clause 5.8. Synthesis results on a target device and a hardware test are open; s
 | [docs/roadmap.md](docs/roadmap.md) | Development plan and module status |
 | [docs/compliance.md](docs/compliance.md) | ECSS compliance matrix: requirements and test cases of every clause (generated) |
 | [docs/coverage.md](docs/coverage.md) | Code coverage of the regression with QuestaSim |
-| [hdl/orm_mib/docs/register_map.md](hdl/orm_mib/docs/register_map.md) | Register map (generated; C header `sw/orm_regs.h`) |
+| [hdl/omap_mib/docs/register_map.md](hdl/omap_mib/docs/register_map.md) | Register map (generated; C header `sw/omap_regs.h`) |
 | `hdl/<module>/docs/` | Specification, architecture, verification plan and verification report of each module |
 
 ## Repository structure
@@ -55,12 +55,12 @@ Prerequisites: Python 3, [GHDL](https://github.com/ghdl/ghdl) on the `PATH` and 
 git submodule update --init
 python -m pip install -r requirements.txt
 python run.py -p 8              # full regression with GHDL, 8 parallel simulations
-python run.py "*orm_pkg*"       # one module
+python run.py "*omap_pkg*"      # one module
 python run.py --questa <test>   # QuestaSim
 ```
 
 `run.py` compiles Open Logic into the VHDL library `olo`, the required UVVM components into their own libraries and
-all OpenRMAP sources into the library `openrmap`. `ORM_GHDL_SIM_FLAGS` passes extra flags to the GHDL simulation,
+all OpenRMAP sources into the library `openrmap`. `OMAP_GHDL_SIM_FLAGS` passes extra flags to the GHDL simulation,
 for example `--vcd=wave.vcd` for a waveform.
 
 Checks besides the regression:
@@ -69,7 +69,7 @@ Checks besides the regression:
 python lint/lint.py                 # VSG, no errors and no warnings
 python lint/synth_check.py          # synthesizability of three node types with GHDL
 python tools/compliance.py --check  # every ECSS clause and requirement traced to a test case
-python tools/regmap.py --check      # generated register map files match hdl/orm_mib/regs/orm_regs.yml
+python tools/regmap.py --check      # generated register map files match hdl/omap_mib/regs/omap_regs.yml
 ```
 
 ## Licence
