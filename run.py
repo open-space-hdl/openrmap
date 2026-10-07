@@ -111,8 +111,8 @@ def set_simulator_options(vu):
     vu.add_compile_option("ghdl.a_flags", ["-frelaxed", "-Wno-hide", "-Wno-shared"])
     vu.set_sim_option("ghdl.elab_flags", ["-frelaxed"])
     # Large word arrays in testbench processes exceed the default stack limit of GHDL. Extra simulation flags for
-    # debugging, for example a waveform: ORM_GHDL_SIM_FLAGS="--vcd=D:/tmp/wave.vcd --read-wave-opt=D:/tmp/wave.opt"
-    extra = os.environ.get("ORM_GHDL_SIM_FLAGS", "").split()
+    # debugging, for example a waveform: OMAP_GHDL_SIM_FLAGS="--vcd=D:/tmp/wave.vcd --read-wave-opt=D:/tmp/wave.opt"
+    extra = os.environ.get("OMAP_GHDL_SIM_FLAGS", "").split()
     vu.set_sim_option("ghdl.sim_flags", ["--max-stack-alloc=0"] + extra)
     vu.set_sim_option("disable_ieee_warnings", True)
     vu.add_compile_option("modelsim.vcom_flags", ["-suppress", "1346,1236,1090"])

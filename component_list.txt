@@ -1,6 +1,6 @@
 # OpenRMAP modules in dependency order (compiled into the library openrmap by run.py)
-hdl/orm_pkg
-hdl/orm_tgt
-hdl/orm_ini
-hdl/orm_mib
-hdl/orm_core
+hdl/omap_pkg
+hdl/omap_target
+hdl/omap_initiator
+hdl/omap_mib
+hdl/omap_core

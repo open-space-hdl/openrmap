@@ -2,7 +2,7 @@
 # Copyright (c) 2026 by Julian Schneider
 # Authors: Julian Schneider
 # ---------------------------------------------------------------------------------------------------
-"""Out-of-context synthesis and implementation of orm_core with AMD Vivado for resources and timing.
+"""Out-of-context synthesis and implementation of omap_core with AMD Vivado for resources and timing.
 
 Usage: python tools/synth_vivado.py [--part PART] [--clk-mhz F] [--generic NAME=VALUE ...] [--vivado PATH]
 Writes vivado_out/synth.tcl, runs Vivado in batch mode and leaves the utilization and timing reports in
@@ -27,24 +27,24 @@ def sources():
         rel = line.strip()
         if rel and rel.split("/")[1] in OLO_AREAS:
             olo.append(ROOT / "open-logic" / rel)
-    orm = []
+    omap = []
     for line in (ROOT / "component_list.txt").read_text().splitlines():
         name = line.strip()
         if name and not name.startswith("#"):
             files = sorted((ROOT / name / "src").glob("*.vhd"))
             # Packages first
-            orm += [f for f in files if f.stem.endswith("_pkg")] + [f for f in files if not f.stem.endswith("_pkg")]
-    return olo, orm
+            omap += [f for f in files if f.stem.endswith("_pkg")] + [f for f in files if not f.stem.endswith("_pkg")]
+    return olo, omap
 
 
 def tcl(part, clk_mhz, generics):
-    olo, orm = sources()
+    olo, omap = sources()
     clk_ns = 1000.0 / clk_mhz
     gen = "".join(f" -generic {g}" for g in generics)
     lines = [f"read_vhdl -vhdl2008 -library olo {{{f.as_posix()}}}" for f in olo]
-    lines += [f"read_vhdl -vhdl2008 -library openrmap {{{f.as_posix()}}}" for f in orm]
+    lines += [f"read_vhdl -vhdl2008 -library openrmap {{{f.as_posix()}}}" for f in omap]
     lines += [
-        f"synth_design -top orm_core -part {part} -mode out_of_context{gen}",
+        f"synth_design -top omap_core -part {part} -mode out_of_context{gen}",
         f"create_clock -name Clk -period {clk_ns:.3f} [get_ports Clk]",
         f"set_input_delay -clock Clk {clk_ns / 2:.3f} [all_inputs]",
         f"set_output_delay -clock Clk {clk_ns / 2:.3f} [all_outputs]",
@@ -64,7 +64,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--part", default="xcvc1902-vsva2197-2MP-e-S")
     parser.add_argument("--clk-mhz", type=float, default=200.0)
-    parser.add_argument("--generic", action="append", default=[], help="generic of orm_core, NAME=VALUE")
+    parser.add_argument("--generic", action="append", default=[], help="generic of omap_core, NAME=VALUE")
     parser.add_argument("--vivado", default=shutil.which("vivado") or r"D:\AMD\2025.2\Vivado\bin\vivado.bat")
     args = parser.parse_args()
     OUT.mkdir(exist_ok=True)
