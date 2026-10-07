@@ -39,7 +39,7 @@ AXI4 master and all other interfaces are AXI4-Stream and AXI4-Lite. The core run
 ### Project
 
 OpenRMAP is an open Remote Memory Access Protocol implementation that is based on the Open Logic VHDL Library. The
-code lives in [rustyqt/OpenRMAP](https://github.com/rustyqt/OpenRMAP) under the PSI HDL Library License,
+code lives in [open-space-hdl/OpenRMAP](https://github.com/open-space-hdl/OpenRMAP) under the PSI HDL Library License,
 Version 1.0, the licence of Open Logic. Open Logic is pinned to `feature/fault-tolerant-all-entities` of
 rustyqt/open-logic (6850713).
 
