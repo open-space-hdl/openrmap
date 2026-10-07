@@ -117,7 +117,7 @@ begin
         if rising_edge(Clk) then
             -- AW handshake
             if AwValid = '1' and AwReady_i = '1' then
-                AwQ_v((AwHead_v + AwCnt_v) mod Queue_c) := to_integer(unsigned(AwAddr));
+                AwQ_v((AwHead_v + AwCnt_v) mod Queue_c) := to_integer(unsigned(AwAddr(minimum(AddrWidth_g, 30) - 1 downto 0)));
                 AwL_v((AwHead_v + AwCnt_v) mod Queue_c) := to_integer(unsigned(AwLen));
                 assert AwBurst = "01"
                     report "orm_tb_axi_ram: only INCR bursts are supported"
@@ -207,7 +207,7 @@ begin
     begin
         if rising_edge(Clk) then
             if ArValid = '1' and ArReady_i = '1' then
-                ArQ_v((ArHead_v + ArCnt_v) mod Queue_c) := to_integer(unsigned(ArAddr));
+                ArQ_v((ArHead_v + ArCnt_v) mod Queue_c) := to_integer(unsigned(ArAddr(minimum(AddrWidth_g, 30) - 1 downto 0)));
                 ArL_v((ArHead_v + ArCnt_v) mod Queue_c) := to_integer(unsigned(ArLen));
                 assert ArBurst = "01"
                     report "orm_tb_axi_ram: only INCR bursts are supported"
