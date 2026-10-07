@@ -44,6 +44,9 @@ package orm_tgt_tb_pkg is
         AuthDelay  : natural;
         ErrInj     : std_logic_vector(2 downto 0);
         ErrDouble  : std_logic;
+        -- '1': the harness drops the characters of the command VVC, takes and drops the replies
+        DropCmd    : std_logic;
+        DropRep    : std_logic;
     end record;
 
     constant TgtCfgInit_c : TgtCfg_t := (
@@ -58,7 +61,9 @@ package orm_tgt_tb_pkg is
         AuthAccept => '1',
         AuthDelay  => 3,
         ErrInj     => "000",
-        ErrDouble  => '0'
+        ErrDouble  => '0',
+        DropCmd    => '0',
+        DropRep    => '0'
     );
 
     -- Observations of the harness

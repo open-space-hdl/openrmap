@@ -135,8 +135,9 @@ begin
         end if;
 
         -- Bytes accessed: one memory word for single-address accesses, n = Data Length / 2 for a
-        -- read-modify-write, Data Length otherwise; at least one byte (address of a zero-length command)
-        if Single_v and Kind_v /= CmdRmw then
+        -- read-modify-write, Data Length otherwise; at least one byte (address of a zero-length command). The
+        -- read-modify-write command code has the increment bit set, so it is never a single-address access.
+        if Single_v then
             Span_v := to_unsigned(WordBytes_c, 41);
         elsif Kind_v = CmdRmw then
             Span_v := resize(Len_v(23 downto 1), 41);
@@ -150,8 +151,7 @@ begin
         Last_v  := First_v + Span_v - 1;
 
         -- Single-address accesses: aligned to the memory word, length a multiple of it (architecture D7)
-        if Single_v and Kind_v /= CmdRmw and
-           (unsigned(Hdr.Addr) mod WordBytes_c /= 0 or Len_v mod WordBytes_c /= 0) then
+        if Single_v and (unsigned(Hdr.Addr) mod WordBytes_c /= 0 or Len_v mod WordBytes_c /= 0) then
             v.Aligned := '0';
         else
             v.Aligned := '1';
@@ -189,7 +189,7 @@ begin
 
                 end case;
 
-                if Single_v and Kind_v /= CmdRmw and Cfg_Win(w).Single = '0' then
+                if Single_v and Cfg_Win(w).Single = '0' then
                     Perm_v := false;
                 end if;
                 if Cfg_Win(w).Enable = '1' and Perm_v and First_v >= resize(unsigned(Cfg_Win(w).Base), 41) and

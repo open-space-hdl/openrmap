@@ -89,12 +89,9 @@ begin
 
         -- Request built from the fields of cmd, its data and the Reply Address bytes ra; the command sent is
         -- expected as the model builds it
-        procedure request (
-            cmd       : TbCmd_t;
-            ra        : t_slv_array;
-            data      : t_slv_array;
-            msg       : string;
-            expectCmd : boolean := true) is
+        function toReq (
+            cmd : TbCmd_t;
+            ra  : t_slv_array) return IniReq_t is
             variable R_v : IniReq_t := IniReqInit_c;
         begin
             R_v.Valid      := '1';
@@ -114,6 +111,18 @@ begin
             R_v.Tid          := cmd.Tid;
             R_v.Addr         := cmd.Ext & cmd.Addr;
             R_v.Len          := cmd.Len;
+            return R_v;
+        end function;
+
+        procedure request (
+            cmd       : TbCmd_t;
+            ra        : t_slv_array;
+            data      : t_slv_array;
+            msg       : string;
+            expectCmd : boolean := true) is
+            variable R_v : IniReq_t;
+        begin
+            R_v := toReq(cmd, ra);
             if data'length > 0 then
                 axistream_transmit(AXISTREAM_VVCT, VvcData_c, data, msg & ": data");
             end if;
@@ -382,17 +391,21 @@ begin
                 reply(rdRep(Cmd_v, x"00", 4, tbBytes(4, 7)), eep => true);
                 axistream_expect(AXISTREAM_VVCT, VvcRepData_c, tbBytes(4, 7), "EEP after the Data CRC");
                 checkConf(4, 24, x"0C", x"00", 4, "01", "EEP after the Data CRC");
+                Cmd_v := tbCmd(x"4C", 16#100#, 4, 25);
+                request(Cmd_v, tbBytes(0), tbBytes(0), "read 25");
+                reply(tbHead(rdRep(Cmd_v, x"00", 4, tbBytes(4, 7)), 12));
+                checkConf(5, 25, x"0C", x"00", 4, "01", "reply ending after the Header CRC: no data");
                 -- Write reply with excess data or EEP (ECSS 5.3.3.11)
                 Cmd_v := tbCmd(x"6C", 16#100#, 1, 40);
                 request(Cmd_v, tbBytes(0), tbBytes(1), "write");
                 reply(tbCat(wrRep(Cmd_v, x"00"), tbBytes(1)));
-                checkConf(5, 40, x"2C", x"00", 0, "01", "write reply with excess data");
+                checkConf(6, 40, x"2C", x"00", 0, "01", "write reply with excess data");
                 Cmd_v := tbCmd(x"6C", 16#100#, 1, 41);
                 request(Cmd_v, tbBytes(0), tbBytes(1), "write");
                 reply(wrRep(Cmd_v, x"00"), eep => true);
-                checkConf(6, 41, x"2C", x"00", 0, "01", "write reply with EEP");
+                checkConf(7, 41, x"2C", x"00", 0, "01", "write reply with EEP");
                 waitIdle;
-                check_value(Obs.DataErrCnt, 7, error, "data errors counted");
+                check_value(Obs.DataErrCnt, 8, error, "data errors counted");
 
             elsif run("test_table") then
                 -- TC-IN-04: transaction table (four entries)
@@ -410,6 +423,19 @@ begin
                 check_value(Obs.TidBusyCnt, 1, error, "rejection counted");
                 -- Commands without reply are not registered
                 request(tbCmd(x"64", 16#300#, 2, 50), tbBytes(0), tbBytes(2), "write without reply, TID 50");
+                -- Rejection held by the user, data of the rejected request late
+                Cfg.ConfReady <= '0';
+                request(tbCmd(x"6C", 16#200#, 3, 50), tbBytes(0), tbBytes(0), "TID 50 in use, held", expectCmd => false);
+                wait for 1 us;
+                check_value(Obs.ConfValid, '1', error, "rejection held");
+                check_value(Obs.ConfCnt, Cnt_v + 1, error, "rejection not taken");
+                Cfg.ConfReady <= '1';
+                checkConf(1, 50, x"6C", x"00", 0, "11", "TID in use, held");
+                wait for 500 ns;
+                axistream_transmit(AXISTREAM_VVCT, VvcData_c, tbBytes(3), "late data of the rejected request");
+                await_completion(AXISTREAM_VVCT, VvcData_c, 1 ms, "late data consumed");
+                request(tbCmd(x"4C", 16#200#, 3, 50), tbBytes(0), tbBytes(0), "read with TID 50 in use", expectCmd => false);
+                checkConf(2, 50, x"4C", x"00", 0, "11", "read with TID in use");
 
                 -- Full table: requests wait
                 for i in 1 to 3 loop
@@ -431,7 +457,7 @@ begin
                 check_value(Obs.CmdSentCnt, 5, error, "fifth read waits for a free entry");
                 reply(rdRep(tbCmd(x"4C", 16#100#, 2, 52), x"00", 2, tbBytes(2)));
                 axistream_expect(AXISTREAM_VVCT, VvcRepData_c, tbBytes(2), "data of 52");
-                checkConf(1, 52, x"0C", x"00", 2, "00", "reply 52");
+                checkConf(3, 52, x"0C", x"00", 2, "00", "reply 52");
 
                 loop
                     wait until rising_edge(Clk);
@@ -467,12 +493,32 @@ begin
                 checkNoConf(2, "no timeout after the reply");
                 wait for 3 us;
                 check_value(Obs.TimeoutCnt, 1, error, "no further timeout");
+                -- Confirmations held by the user: the reply that came first, then the timeout; the command of the
+                -- held reply does not time out
+                Cfg.ConfReady <= '0';
+                request(tbCmd(x"4C", 16#100#, 2, 73), tbBytes(0), tbBytes(0), "read without reply");
+                Cmd_v         := tbCmd(x"6C", 16#100#, 1, 74);
+                request(Cmd_v, tbBytes(0), tbBytes(1), "write");
+                wait for 1 us;
+                reply(wrRep(Cmd_v, x"00"));
+                wait for 3 us;
+                check_value(Obs.ConfValid, '1', error, "reply held");
+                Cfg.ConfReady <= '1';
+                checkConf(2, 74, x"2C", x"00", 0, "00", "held reply");
+                checkConf(3, 73, x"4C", x"00", 0, "10", "held timeout");
+                checkNoConf(4, "no timeout of the confirmed command");
+                Cfg.ConfReady <= '0';
+                request(tbCmd(x"4C", 16#100#, 2, 75), tbBytes(0), tbBytes(0), "read without reply");
+                wait for 3 us;
+                check_value(Obs.ConfValid, '1', error, "timeout held");
+                Cfg.ConfReady <= '1';
+                checkConf(4, 75, x"4C", x"00", 0, "10", "held timeout alone");
                 -- Timeout 0: no timeout
                 Cfg.Timeout <= x"0000";
                 Cmd_v       := tbCmd(x"6C", 16#100#, 1, 72);
                 request(Cmd_v, tbBytes(0), tbBytes(1), "write without timeout");
                 wait for 10 us;
-                check_value(Obs.TimeoutCnt, 1, error, "no timeout with timeout 0");
+                check_value(Obs.TimeoutCnt, 3, error, "no timeout with timeout 0");
                 check_value(Obs.OpenCnt, 1, error, "entry kept");
 
             elsif run("test_no_table") then
@@ -482,6 +528,68 @@ begin
                 request(tbCmd(x"4C", 16#100#, 2, 81), tbBytes(0), tbBytes(0), "read 81");
                 request(tbCmd(x"4C", 16#100#, 2, 81), tbBytes(0), tbBytes(0), "read 81 again");
                 check_value(Obs.TidBusyCnt, 0, error, "no duplicate check");
+                waitIdle;
+
+            elsif run("test_reset") then
+
+                -- TC-IN-08: reset at every cycle of a request in three situations, the initiator works after each
+                -- reset
+                for kind in 0 to 2 loop
+
+                    for k in 1 to 80 loop
+                        Cfg.DropCmd <= '1';
+                        if kind = 1 then
+                            -- Rejection held by the user
+                            request(tbCmd(x"4C", 16#100#, 4, 1), tbBytes(0), tbBytes(0), "read", expectCmd => false);
+                            Cfg.ConfReady <= '0';
+                        elsif kind = 2 then
+
+                            -- Full table: the request waits for a free entry
+                            for i in 1 to Transactions_g loop
+                                request(tbCmd(x"4C", 16#100#, 4, 10 + i), tbBytes(0), tbBytes(0), "read", expectCmd => false);
+                            end loop;
+
+                        end if;
+                        -- Write with a Target SpaceWire Address of three bytes and 40 data bytes
+                        Cmd_v                   := tbCmd(x"6C", 16#100#, 40, 1);
+                        Cmd_v.PathLen           := 3;
+                        Cmd_v.Path(23 downto 0) := x"030201";
+                        axistream_transmit(AXISTREAM_VVCT, VvcData_c, tbBytes(40, k), "data");
+                        wait until rising_edge(Clk);
+                        Req                     <= toReq(Cmd_v, tbBytes(0));
+
+                        for i in 1 to k loop
+                            wait until rising_edge(Clk);
+                            if ReqReady = '1' then
+                                Req.Valid <= '0';
+                            end if;
+                        end loop;
+
+                        Rst           <= '1';
+                        Req.Valid     <= '0';
+                        Cfg.DropData  <= '1';
+                        await_completion(AXISTREAM_VVCT, VvcData_c, 1 ms, "rest of the data dropped");
+                        wait until rising_edge(Clk);
+                        Rst           <= '0';
+                        Cfg.DropData  <= '0';
+                        Cfg.ConfReady <= '1';
+                        wait until rising_edge(Clk);
+                        if k mod 10 = 0 then
+                            Cfg.DropCmd <= '0';
+                            request(tbCmd(x"64", 16#200#, 4, 99), tbBytes(0), tbBytes(4, k), "write after a reset");
+                            await_completion(AXISTREAM_VVCT, VvcCmd_c, 1 ms, "command after a reset");
+                        end if;
+                    end loop;
+
+                end loop;
+
+                Cfg.DropCmd <= '0';
+                Cnt_v       := Obs.ConfCnt;
+                Cmd_v       := tbCmd(x"4C", 16#100#, 2, 98);
+                request(Cmd_v, tbBytes(0), tbBytes(0), "read after the resets");
+                reply(rdRep(Cmd_v, x"00", 2, tbBytes(2)));
+                axistream_expect(AXISTREAM_VVCT, VvcRepData_c, tbBytes(2), "read data after the resets");
+                checkConf(0, 98, x"0C", x"00", 2, "00", "read after the resets");
                 waitIdle;
 
             elsif run("test_stress") then

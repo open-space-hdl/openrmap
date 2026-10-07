@@ -19,7 +19,7 @@ the standard" of the module specifications.
 | 5.1.4 | Instruction field | TG-1 | CO-DM-01, IN-TX-01, PKG-02, TG-RX-01 | TC-CO-01, TC-CO-02, TC-CO-03, TC-CO-05, TC-IN-01, TC-PKG-03, TC-TG-01 | Verified |
 | 5.1.5 | Key field | TG-1 | IN-TX-01, TG-AU-04, TG-RX-01 | TC-IN-01, TC-TG-01, TC-TG-07 | Verified |
 | 5.1.6 | Reply Address field | TG-5 | IN-TX-01, IN-TX-02, PKG-02, TG-RX-01, TG-TX-02 | TC-IN-01, TC-PKG-03, TC-TG-01, TC-TG-13 | Verified |
-| 5.1.7 to 5.1.15 | Initiator Logical Address to Data CRC fields | TG-1 | IN-TT-01, IN-TT-02, IN-TX-01, IN-TX-03, TG-IF-02, TG-RX-01, TG-RX-05 | TC-IN-01, TC-IN-02, TC-IN-04, TC-TG-01, TC-TG-10, TC-TG-14 | Verified |
+| 5.1.7 to 5.1.15 | Initiator Logical Address to Data CRC fields | TG-1 | IN-TT-01, IN-TT-02, IN-TX-01, IN-TX-03, TG-IF-02, TG-RX-01, TG-RX-05 | TC-IN-01, TC-IN-02, TC-IN-04, TC-IN-05, TC-TG-01, TC-TG-10, TC-TG-14 | Verified |
 | 5.1.16 | Reply SpaceWire Address field | TG-5 | IN-IF-02, TG-TX-02 | TC-IN-01, TC-IN-07, TC-TG-13 | Verified |
 | 5.1.17 | Status field | TG-5 | TG-TX-03 | TC-TG-01 | Verified |
 | 5.2 | Cyclic Redundancy Code | TG-1 | IN-TX-03, PKG-01, TG-RX-02, TG-RX-05, TG-TX-04 | TC-IN-01, TC-PKG-01, TC-PKG-02, TC-TG-01, TC-TG-03, TC-TG-04, TC-TG-05, TC-TG-10 | Verified |
@@ -31,7 +31,7 @@ the standard" of the module specifications.
 | 5.3.3.6 | Write data | TG-3 (5.3.3.6.2 to 5.3.3.6.13), TG-4 (5.3.3.6.1, 5.3.3.6.14) | TG-AU-06, TG-EX-01, TG-EX-02, TG-EX-03 | TC-TG-02, TC-TG-07, TC-TG-08, TC-TG-09, TC-TG-14 | Verified |
 | 5.3.3.7 | Write data indication | TG-3 | TG-IF-05 | TC-TG-01 | Verified |
 | 5.3.3.8 | Write reply | TG-5 | TG-TX-01 | TC-TG-01, TC-TG-02 | Verified |
-| 5.3.3.9 | Write command complete confirmation | IN-2 | IN-IF-03, IN-TT-01, IN-TT-04 | TC-IN-02, TC-IN-04, TC-IN-06, TC-IN-07 | Verified |
+| 5.3.3.9 | Write command complete confirmation | IN-2 | IN-IF-03, IN-TT-01, IN-TT-04 | TC-IN-02, TC-IN-04, TC-IN-05, TC-IN-06, TC-IN-07 | Verified |
 | 5.3.3.10 | Write not OK | TG-4 | TG-EX-06 | TC-TG-11, TC-TG-15 | Verified |
 | 5.3.3.11, 5.3.3.12 | Corrupted and invalid write reply | IN-2 | IN-RX-02, IN-RX-03 | TC-IN-03 | Verified |
 | 5.4.1 | Read command format | TG-1 | IN-TX-01, IN-TX-02, TG-EX-07, TG-RX-01, TG-RX-05 | TC-IN-01, TC-TG-01, TC-TG-02, TC-TG-03, TC-TG-04, TC-TG-10 | Verified |
@@ -42,7 +42,7 @@ the standard" of the module specifications.
 | 5.4.3.6 | Read data | TG-4 | TG-EX-04 | TC-TG-03, TC-TG-10, TC-TG-14 | Verified |
 | 5.4.3.7 | Read data indication | TG-3 | TG-IF-05 | TC-TG-01 | Verified |
 | 5.4.3.8 | Read reply | TG-5 | TG-TX-01 | TC-TG-01, TC-TG-02 | Verified |
-| 5.4.3.9 | Read data confirmation | IN-2 | IN-IF-03, IN-RX-04, IN-TT-01 | TC-IN-02, TC-IN-03, TC-IN-04, TC-IN-07 | Verified |
+| 5.4.3.9 | Read data confirmation | IN-2 | IN-IF-03, IN-RX-04, IN-TT-01 | TC-IN-02, TC-IN-03, TC-IN-04, TC-IN-05, TC-IN-07 | Verified |
 | 5.4.3.10 | Read not OK | TG-4 | TG-EX-06 | TC-TG-11, TC-TG-15 | Verified |
 | 5.4.3.11 to 5.4.3.13 | Read reply header error, data error, invalid reply | IN-2 | IN-RX-02, IN-RX-03 | TC-IN-03 | Verified |
 | 5.5.1 | Read-modify-write command format | TG-1 | IN-TX-01, IN-TX-02, TG-AU-05, TG-RX-01, TG-RX-05 | TC-IN-01, TC-TG-01, TC-TG-07, TC-TG-10 | Verified |
@@ -53,7 +53,7 @@ the standard" of the module specifications.
 | 5.5.3.6, 5.5.3.7 | Read data, write data | TG-4 | TG-EX-05 | TC-TG-04, TC-TG-10, TC-TG-12 | Verified |
 | 5.5.3.8 | Read-modify-write data indication | TG-3 | TG-IF-05 | TC-TG-01 | Verified |
 | 5.5.3.9 | Read-modify-write reply | TG-5 | TG-TX-01 | TC-TG-01, TC-TG-02 | Verified |
-| 5.5.3.10 | Read-modify-write complete confirmation | IN-2 | IN-IF-03, IN-RX-04, IN-TT-01 | TC-IN-02, TC-IN-03, TC-IN-04, TC-IN-07 | Verified |
+| 5.5.3.10 | Read-modify-write complete confirmation | IN-2 | IN-IF-03, IN-RX-04, IN-TT-01 | TC-IN-02, TC-IN-03, TC-IN-04, TC-IN-05, TC-IN-07 | Verified |
 | 5.5.3.11 | Read and write not OK | TG-4 | TG-EX-06 | TC-TG-11, TC-TG-15 | Verified |
 | 5.5.3.12 to 5.5.3.14 | Read-modify-write reply header error, data error, invalid reply | IN-2 | IN-RX-02, IN-RX-03 | TC-IN-03 | Verified |
 | 5.6 | Error and status codes | TG-3 | CO-MX-01, MG-RF-04, PKG-03, TG-AU-08 | TC-CO-01, TC-CO-02, TC-CO-04, TC-CO-08, TC-CO-09, TC-MB-03, TC-MB-04, TC-PKG-03, TC-TG-07, TC-TG-08, TC-TG-12 | Verified |
@@ -71,9 +71,9 @@ reference included).
 | Module | Requirements | Verified by a test case | Without a test case |
 | --- | --- | --- | --- |
 | `orm_core` | 11 | 11 | - |
-| `orm_ini` | 15 | 15 | - |
+| `orm_ini` | 16 | 16 | - |
 | `orm_mib` | 12 | 12 | - |
 | `orm_pkg` | 4 | 4 | - |
-| `orm_tgt` | 30 | 30 | - |
+| `orm_tgt` | 31 | 31 | - |
 
-Requirements: 72; without a test case: 0; test cases of the plans not run by a testbench: 0.
+Requirements: 74; without a test case: 0; test cases of the plans not run by a testbench: 0.

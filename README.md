@@ -9,15 +9,25 @@ buffers use the fault-tolerant entities of [Open Logic](https://github.com/open-
 
 ## Status
 
-Under development; see [docs/roadmap.md](docs/roadmap.md).
+The core is complete and verified in simulation (GHDL and QuestaSim, 50 test cases at unit and core level, statement,
+branch and state machine coverage closed, see [docs/coverage.md](docs/coverage.md)); the
+[compliance matrix](docs/compliance.md) traces every ECSS clause in scope to its requirements and test cases. Two cores
+access each other's memory through a packet network model, pass packets of other protocols, report injected network
+faults with the status codes of the standard, and answer the commands of ECSS Annex A.4 with the replies of Annex A.4.
+The [user guide](docs/user_guide.md) contains the conformance statement and the product characteristics of ECSS
+clause 5.8. Synthesis results on a target device and a hardware test are open; see [docs/roadmap.md](docs/roadmap.md).
 
 ## Documentation
 
 | Document | Content |
 | --- | --- |
 | [docs/architecture.md](docs/architecture.md) | Architecture: building blocks, owned ECSS clauses, Open Logic usage, verification |
+| [docs/user_guide.md](docs/user_guide.md) | Integration: sources, generics, interfaces, programming sequence, integration constraints, conformance statement and product characteristics |
 | [docs/conventions.md](docs/conventions.md) | Coding, verification and repository conventions |
 | [docs/roadmap.md](docs/roadmap.md) | Development plan and module status |
+| [docs/compliance.md](docs/compliance.md) | ECSS compliance matrix: requirements and test cases of every clause (generated) |
+| [docs/coverage.md](docs/coverage.md) | Code coverage of the regression with QuestaSim |
+| [hdl/orm_mib/docs/register_map.md](hdl/orm_mib/docs/register_map.md) | Register map (generated; C header `sw/orm_regs.h`) |
 | `hdl/<module>/docs/` | Specification, architecture, verification plan and verification report of each module |
 
 ## Repository structure
@@ -57,6 +67,7 @@ Checks besides the regression:
 
 ```shell
 python lint/lint.py                 # VSG, no errors and no warnings
+python lint/synth_check.py          # synthesizability of three node types with GHDL
 python tools/compliance.py --check  # every ECSS clause and requirement traced to a test case
 python tools/regmap.py --check      # generated register map files match hdl/orm_mib/regs/orm_regs.yml
 ```

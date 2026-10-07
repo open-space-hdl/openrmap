@@ -41,8 +41,9 @@ Length leads to the data field, otherwise the reply is discarded as unexpected.
 Data bytes (read format, up to the Data Length) pass through a hold register of two bytes: a byte is passed on when
 the second byte after it arrives. At the end of the packet the held bytes are passed on and the last one carries
 `TLast`; in a reply that ended before its Data CRC the newest held byte is taken as the Data CRC and dropped. The
-character after the data is compared with the Data CRC; further characters set the excess flag. The confirmation
-follows the last data byte; on its handshake the entry is removed from the table.
+character after the data is compared with the Data CRC; further characters set the excess flag. The entry is
+removed from the table in the cycle of the lookup, so its timer cannot expire while the reply is received or its
+confirmation waits; the confirmation follows the last data byte.
 
 | End of the data field | Local error |
 | --- | --- |

@@ -9,6 +9,8 @@ windows."""
 def configure(lib):
     tb = lib.test_bench("orm_tgt_tb")
     tb.test("test_ext_auth").add_config(name="ext_auth", generics={"ExtAuth_g": True})
+    tb.test("test_reset").add_config(name="int_auth", generics={})
+    tb.test("test_reset").add_config(name="ext_auth", generics={"ExtAuth_g": True})
     for name in ("test_write_variants", "test_read_variants", "test_rmw", "test_stress"):
         test = tb.test(name)
         test.add_config(name="axi32", generics={})

@@ -17,6 +17,7 @@ an AXI4 master and sends the replies on a second N-Char stream. It executes one 
 | TG-IF-03 | The target shall take its configuration (logical addresses, key, address windows) from the register file and report every checked command and every discarded packet as events. | 5.3.3.5, error information gathering of 5.3.3, 5.4.3, 5.5.3 |
 | TG-IF-04 | With `ExtAuth_g` the target shall ask an external authorisation port for every command that passes the internal checks and reject it when the port does not accept it. | 5.3.3.5.1, 5.4.3.5.1, 5.5.3.5.1 |
 | TG-IF-05 | The target shall indicate every executed or rejected command with a reply-capable header to the user application with its instruction, address, length, Transaction Identifier and status. | 5.3.3.7, 5.4.3.7, 5.5.3.8 |
+| TG-IF-06 | The reset input shall return the target from any state to the reception of a new command; the next command after the reset is executed normally. | none (D12) |
 
 ### 2.2 Command decoding (TG-1)
 

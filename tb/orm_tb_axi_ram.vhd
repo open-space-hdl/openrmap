@@ -35,6 +35,7 @@ entity orm_tb_axi_ram is
     );
     port (
         Clk     : in    std_logic;
+        Rst     : in    std_logic := '0'; -- Drops all outstanding transactions
         AwAddr  : in    std_logic_vector(AddrWidth_g - 1 downto 0);
         AwLen   : in    std_logic_vector(7 downto 0);
         AwSize  : in    std_logic_vector(2 downto 0);
@@ -181,6 +182,18 @@ begin
                 BResp    <= "00";
                 BValid_i <= '0';
             end if;
+
+            if Rst = '1' then
+                AwHead_v  := 0;
+                AwCnt_v   := 0;
+                Beat_v    := 0;
+                Err_v     := false;
+                BHead_v   := 0;
+                BCnt_v    := 0;
+                AwReady_i <= '0';
+                WReady_i  <= '0';
+                BValid_i  <= '0';
+            end if;
         end if;
     end process;
 
@@ -253,6 +266,14 @@ begin
                 end if;
             elsif ArCnt_v = 0 and RReady = '1' then
                 RValid_i <= '0';
+            end if;
+
+            if Rst = '1' then
+                ArHead_v  := 0;
+                ArCnt_v   := 0;
+                Beat_v    := 0;
+                ArReady_i <= '0';
+                RValid_i  <= '0';
             end if;
         end if;
     end process;

@@ -181,23 +181,18 @@ architecture rtl of orm_tgt_ctrl is
     signal FifoOut_Ded   : std_logic;
     signal FifoEmpty     : std_logic;
 
-    -- Status after the end of the packet (architecture D9): end of the packet, Data CRC, external authorisation
-    function endStatus (
-        rr      : TwoProcess_r;
-        hasData : boolean) return std_logic_vector is
+    -- Status of a write after the end of the packet (architecture D9): end of the packet, then Data CRC. A write
+    -- with a header error or rejected by the external authorisation ends in Drain_s instead.
+    function writeEndStatus (rr : TwoProcess_r) return std_logic_vector is
     begin
-        if rr.HdrStatus /= StatusOk_c then
-            return rr.HdrStatus;
-        elsif rr.EndEep = '1' then
+        if rr.EndEep = '1' then
             return StatusEep_c;
         elsif rr.EndEarly = '1' then
             return StatusEarlyEop_c;
         elsif rr.EndExcess = '1' then
             return StatusTooMuch_c;
-        elsif hasData and rr.EndCrcOk = '0' then
+        elsif rr.EndCrcOk = '0' then
             return StatusDataCrc_c;
-        elsif rr.ExtReject = '1' then
-            return StatusNotAuth_c;
         else
             return StatusOk_c;
         end if;
@@ -248,7 +243,9 @@ begin
         if PumpOk_v then
             v.Pump := r.Pump - 1;
         end if;
-        if FifoOut_Valid = '1' and FifoOut_Ded = '1' and (PumpOk_v or (r.Drain = '1' and r.Pump = 0)) then
+        -- A double error in a word written to memory gives status 1; a discarded word belongs to a command with an
+        -- error status already
+        if FifoOut_Valid = '1' and FifoOut_Ded = '1' and PumpOk_v then
             v.BufErr := '1';
         end if;
 
@@ -347,15 +344,16 @@ begin
                             v.Fsm := Reply_s;
                         end if;
                     else
-                        -- External authorisation rejected
+                        -- External authorisation rejected (a write or a read; a read-modify-write is authorised
+                        -- after its data is checked, in RmwExt_s). An early EOP occurs only in a write.
                         v.Status := StatusNotAuth_c;
                         if End_Eep = '1' then
                             v.Status := StatusEep_c;
-                        elsif End_Early = '1' and (r.Kind = CmdWrite or r.Kind = CmdRmw) then
+                        elsif End_Early = '1' then
                             v.Status := StatusEarlyEop_c;
                         elsif End_Excess = '1' then
                             v.Status := StatusTooMuch_c;
-                        elsif (r.Kind = CmdWrite or r.Kind = CmdRmw) and End_CrcOk = '0' then
+                        elsif r.Kind = CmdWrite and End_CrcOk = '0' then
                             v.Status := StatusDataCrc_c;
                         end if;
                         if r.NoReply = '0' then
@@ -431,7 +429,7 @@ begin
                 -- Completion: all committed bytes written, nothing left in the buffer, memory idle
                 if r.EndSeen = '1' and r.CmdPend = '0' and r.Pump = 0 and FifoEmpty = '1' and Mem_Busy = '0' and
                    (r.CommitEn = '0' or r.Committed = Len_v) and v.CmdPend = '0' then
-                    v.Status := endStatus(r, true);
+                    v.Status := writeEndStatus(r);
                     if r.EndEep = '1' and r.EndImm = '1' then
                         v.Status := StatusEep_c;
                     elsif v.Status = StatusOk_c and (Mem_Err = '1' or r.BufErr = '1') then
