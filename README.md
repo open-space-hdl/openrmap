@@ -33,7 +33,7 @@ clause 5.8. Synthesis results on a target device and a hardware test are open; s
 ## Repository structure
 
 ```text
-OpenRMAP/
+openrmap/
 |-- docs/             Top-level documentation
 |-- hdl/<module>/     One folder per module: src/, tb/, docs/
 |-- tb/               Verification components shared by the testbenches (RMAP model, AXI memory model)
