@@ -84,8 +84,13 @@ class Register:
         return value
 
 
+ADDR_BITS = 8
+
+
 def load():
+    global ADDR_BITS
     d = yaml.safe_load(SOURCE.read_text(encoding="utf-8"))
+    ADDR_BITS = d.get("addr_bits", 8)
     regs = [Register(r) for r in d["registers"]]
     arrays = []
     for a in d.get("arrays", []):
@@ -102,7 +107,7 @@ def addr_text(reg):
         a = reg.array
         index = "n"
         return f"0x{reg.address:03X} + 0x{a['stride']:X} {index}"
-    return f"0x{reg.address:02X}"
+    return f"0x{reg.address:03X}"
 
 
 def reset_text(f):
@@ -158,14 +163,14 @@ def vhdl(reg_id, regs, arrays):
     lines += aligned([("RegMapId_c", "std_logic_vector(31 downto 0)", f'x"{reg_id:08X}"')])
     lines.append("")
     lines += section("Register addresses (byte addresses)")
-    lines += aligned([(f"Reg{camel(r.name)}_c", "natural", f"16#{r.address:02X}#") for r in regs])
+    lines += aligned([(f"Reg{camel(r.name)}_c", "natural", f"16#{r.address:03X}#") for r in regs])
     for a, aregs in arrays:
         lines.append("")
         lines += section(f"{a['name']} registers: address of instance n = Reg<Name>_c + n * "
                          f"Reg{camel(a['name'])}Stride_c")
         decls = [(f"Reg{camel(a['name'])}Base_c", "natural", f"16#{a['base']:03X}#"),
                  (f"Reg{camel(a['name'])}Stride_c", "natural", f"16#{a['stride']:03X}#")]
-        decls += [(f"Reg{camel(r.name)}_c", "natural", f"16#{r.address:02X}#") for r in aregs]
+        decls += [(f"Reg{camel(r.name)}_c", "natural", f"16#{r.address:03X}#") for r in aregs]
         decls += [(f"Reg{camel(r.name)}Ofs_c", "natural", f"16#{r.offset:02X}#") for r in aregs]
         lines += aligned(decls)
     lines.append("")
@@ -202,8 +207,8 @@ def markdown(reg_id, regs, arrays):
         f"{GENERATED.replace('tools/regmap.py', '`tools/regmap.py`').replace('hdl/orm_mib/regs/orm_regs.yml', '`hdl/orm_mib/regs/orm_regs.yml`')}",
         "The same description generates the VHDL package `orm_regs_pkg` and the C header `sw/orm_regs.h`.",
         "",
-        "Byte addresses of 32-bit registers on the AXI4-Lite port (8-bit address); unused addresses and bits read as "
-        "zero.",
+        f"Byte addresses of 32-bit registers on the AXI4-Lite port ({ADDR_BITS}-bit address); unused addresses and "
+        "bits read as zero.",
         f"The ID register reads 0x{reg_id:08X}.",
         "",
         "| Access | Meaning |",
@@ -250,7 +255,7 @@ def header(reg_id, regs, arrays):
     ]
     lines += defines([("ORM_REGMAP_ID", f"0x{reg_id:08X}u")])
     lines += ["", "/* Register addresses */"]
-    lines += defines([(f"ORM_{r.name}", f"0x{r.address:02X}u") for r in regs])
+    lines += defines([(f"ORM_{r.name}", f"0x{r.address:03X}u") for r in regs])
     for a, aregs in arrays:
         index = "n"
         lines += ["", f"/* {a['description']} */"]

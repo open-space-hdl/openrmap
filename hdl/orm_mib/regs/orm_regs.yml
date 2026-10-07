@@ -1,0 +1,285 @@
+# ---------------------------------------------------------------------------------------------------
+# Copyright (c) 2026 by Julian Schneider
+# Authors: Julian Schneider
+# ---------------------------------------------------------------------------------------------------
+# Register map of the OpenRMAP MIB: the single description from which tools/regmap.py generates the
+# VHDL package hdl/orm_pkg/src/orm_regs_pkg.vhd, the documentation hdl/orm_mib/docs/register_map.md and
+# the C header sw/orm_regs.h.
+#
+# Byte addresses of 32-bit registers on the AXI4-Lite port (10-bit address). Access per field:
+#   RO   read only
+#   RW   read and write
+#   W1   write one: command, reads as zero
+#   W1C  sticky flag, write one to clear
+#   WO   write only, reads as zero
+#   RC   read only, any write to the register clears it (counters)
+# A reset value written as text depends on generics; status fields have none. Counters are 16 bits wide
+# and saturate.
+
+id: 0x4F524D01
+addr_bits: 10
+
+registers:
+  - name: ID
+    offset: 0x000
+    description: Identification of the core and version of the register map
+    fields:
+      - {name: ID, bits: "31:0", access: RO, reset: 0x4F524D01, description: "0x4F524D (ORM) and register map version 1"}
+
+  - name: GENERICS
+    offset: 0x004
+    description: Generics of the core
+    fields:
+      - {name: TARGET, bits: "0", access: RO, reset: Target_g, description: RMAP target implemented}
+      - {name: INITIATOR, bits: "1", access: RO, reset: Initiator_g, description: RMAP initiator implemented}
+      - {name: PASSTHROUGH, bits: "2", access: RO, reset: Passthrough_g, description: User port for packets of other protocols}
+      - {name: EXT_AUTH, bits: "3", access: RO, reset: ExtAuth_g, description: External authorisation port}
+      - {name: WINDOWS, bits: "7:4", access: RO, reset: Windows_g, description: Number of address windows}
+      - {name: TRANSACTIONS, bits: "15:8", access: RO, reset: Transactions_g, description: Entries of the transaction table of the initiator}
+      - {name: WORD_BYTES, bits: "23:16", access: RO, reset: AxiDataWidth_g / 8, description: "Bytes of the AXI data word (memory word of single-address accesses)"}
+      - {name: TGT_ADDR_BYTES, bits: "28:24", access: RO, reset: TgtAddrBytes_g, description: Maximum Target SpaceWire Address of the initiator in bytes}
+
+  - name: BUFFERS
+    offset: 0x008
+    description: Buffer sizes of the target
+    fields:
+      - {name: VERIFY_BYTES, bits: "15:0", access: RO, reset: BufferBytes_g, description: Maximum Data Length of a verified write}
+      - {name: CHUNK_BYTES, bits: "31:16", access: RO, reset: ChunkBytes_g, description: Chunk of a non-verified write}
+
+  - name: TGT_LA
+    offset: 0x010
+    description: "Logical addresses of the target (ECSS 5.3.3.5.3)"
+    fields:
+      - {name: LA0, bits: "7:0", access: RW, reset: La0_g, description: First logical address}
+      - {name: LA1, bits: "15:8", access: RW, reset: La1_g, description: Second logical address}
+      - {name: LA0_EN, bits: "16", access: RW, reset: 1, description: First logical address accepted}
+      - {name: LA1_EN, bits: "17", access: RW, reset: 0, description: Second logical address accepted}
+      - {name: DEF_LA_EN, bits: "18", access: RW, reset: DefLaEn_g, description: "Default logical address 0xFE accepted (ECSS 5.1.2 note 2)"}
+
+  - name: TGT_KEY
+    offset: 0x014
+    description: "Key of the target (ECSS 5.3.3.5.2)"
+    fields:
+      - {name: KEY, bits: "7:0", access: RW, reset: Key_g, description: Expected key}
+      - {name: KEY_EN, bits: "8", access: RW, reset: 1, description: "Key checked; '0' accepts every key"}
+
+  - name: TGT_LAST
+    offset: 0x018
+    description: Last command of the target with an intact header
+    fields:
+      - {name: STATUS, bits: "7:0", access: RO, description: Status of the command}
+      - {name: INSTR, bits: "15:8", access: RO, description: Instruction}
+      - {name: ILA, bits: "23:16", access: RO, description: Initiator Logical Address}
+      - {name: REPLIED, bits: "24", access: RO, description: Reply sent}
+
+  - name: TGT_LAST_TID
+    offset: 0x01C
+    description: Transaction Identifier of the last command
+    fields:
+      - {name: TID, bits: "15:0", access: RO, description: Transaction Identifier}
+
+  - name: TGT_LAST_ADDR
+    offset: 0x020
+    description: Address of the last command
+    fields:
+      - {name: ADDR, bits: "31:0", access: RO, description: Address field}
+
+  - name: TGT_LAST_ADDR_EXT
+    offset: 0x024
+    description: Extended Address of the last command
+    fields:
+      - {name: EXT, bits: "7:0", access: RO, description: Extended Address field}
+
+  - name: TGT_CNT_OK
+    offset: 0x030
+    description: Commands of the target executed with status 0
+    fields:
+      - {name: WRITE, bits: "15:0", access: RC, reset: 0, description: Write commands}
+      - {name: READ, bits: "31:16", access: RC, reset: 0, description: Read commands}
+
+  - name: TGT_CNT_OK2
+    offset: 0x034
+    description: Read-modify-write commands and replies of the target
+    fields:
+      - {name: RMW, bits: "15:0", access: RC, reset: 0, description: Read-modify-write commands with status 0}
+      - {name: REPLIES, bits: "31:16", access: RC, reset: 0, description: Replies sent}
+
+  - name: TGT_CNT_HDR
+    offset: 0x038
+    description: "Packets discarded by the target without reply (ECSS 5.3.3.4.2, 5.3.3.4.5, 5.7.1.3c)"
+    fields:
+      - {name: HDR_CRC, bits: "15:0", access: RC, reset: 0, description: Header CRC errors}
+      - {name: HDR_SHORT, bits: "31:16", access: RC, reset: 0, description: End of the packet before the Header CRC}
+
+  - name: TGT_CNT_ERR1
+    offset: 0x03C
+    description: Commands with the status codes 1 and 2
+    fields:
+      - {name: GENERAL, bits: "15:0", access: RC, reset: 0, description: "General error (1): memory error"}
+      - {name: UNUSED, bits: "31:16", access: RC, reset: 0, description: "Unused packet type or command code (2)"}
+
+  - name: TGT_CNT_ERR2
+    offset: 0x040
+    description: Commands with the status codes 3 and 4
+    fields:
+      - {name: KEY, bits: "15:0", access: RC, reset: 0, description: "Invalid key (3)"}
+      - {name: DATA_CRC, bits: "31:16", access: RC, reset: 0, description: "Invalid Data CRC (4)"}
+
+  - name: TGT_CNT_ERR3
+    offset: 0x044
+    description: Commands with the status codes 5 and 6
+    fields:
+      - {name: EARLY_EOP, bits: "15:0", access: RC, reset: 0, description: "Early EOP (5)"}
+      - {name: TOO_MUCH, bits: "31:16", access: RC, reset: 0, description: "Too much data (6)"}
+
+  - name: TGT_CNT_ERR4
+    offset: 0x048
+    description: Commands with the status codes 7 and 9
+    fields:
+      - {name: EEP, bits: "15:0", access: RC, reset: 0, description: "EEP (7), including an EEP immediately after the header"}
+      - {name: VERIFY_OVERRUN, bits: "31:16", access: RC, reset: 0, description: "Verify buffer overrun (9)"}
+
+  - name: TGT_CNT_ERR5
+    offset: 0x04C
+    description: Commands with the status codes 10 and 11
+    fields:
+      - {name: NOT_AUTH, bits: "15:0", access: RC, reset: 0, description: "Command not implemented or not authorised (10)"}
+      - {name: RMW_LENGTH, bits: "31:16", access: RC, reset: 0, description: "Read-modify-write Data Length error (11)"}
+
+  - name: TGT_CNT_ERR6
+    offset: 0x050
+    description: Commands with the status code 12 and replies received by the target
+    fields:
+      - {name: TLA, bits: "15:0", access: RC, reset: 0, description: "Invalid Target Logical Address (12)"}
+      - {name: REPLY_RX, bits: "31:16", access: RC, reset: 0, description: "Replies received by the target (ECSS 5.7.1.3c)"}
+
+  - name: INI_TIMEOUT
+    offset: 0x060
+    description: "Reply timeout of the initiator (ECSS 4.3.1)"
+    fields:
+      - {name: TICK_CYCLES, bits: "15:0", access: RW, reset: TickCycles_g, description: Tick period minus one in clock cycles}
+      - {name: TIMEOUT, bits: "31:16", access: RW, reset: Timeout_g, description: "Timeout in ticks; 0 disables the timeout"}
+
+  - name: INI_STATUS
+    offset: 0x064
+    description: Status of the initiator
+    fields:
+      - {name: OPEN, bits: "7:0", access: RO, description: Outstanding commands in the transaction table}
+
+  - name: INI_CNT1
+    offset: 0x068
+    description: Commands sent and replies confirmed by the initiator
+    fields:
+      - {name: CMD_SENT, bits: "15:0", access: RC, reset: 0, description: Commands sent}
+      - {name: REP_OK, bits: "31:16", access: RC, reset: 0, description: Replies confirmed without error}
+
+  - name: INI_CNT2
+    offset: 0x06C
+    description: "Corrupted replies at the initiator (ECSS 5.3.3.11, 5.4.3.11, 5.4.3.12)"
+    fields:
+      - {name: HDR_ERR, bits: "15:0", access: RC, reset: 0, description: Replies discarded for a header error}
+      - {name: DATA_ERR, bits: "31:16", access: RC, reset: 0, description: Replies confirmed with a data error}
+
+  - name: INI_CNT3
+    offset: 0x070
+    description: Unexpected replies and timeouts
+    fields:
+      - {name: UNEXPECTED, bits: "15:0", access: RC, reset: 0, description: Replies without an outstanding command}
+      - {name: TIMEOUT, bits: "31:16", access: RC, reset: 0, description: Commands confirmed with a timeout}
+
+  - name: INI_CNT4
+    offset: 0x074
+    description: Rejected requests and commands received by an initiator-only node
+    fields:
+      - {name: TID_BUSY, bits: "15:0", access: RC, reset: 0, description: Requests rejected for a Transaction Identifier in use}
+      - {name: CMD_RX, bits: "31:16", access: RC, reset: 0, description: "Commands received without target (ECSS 5.7.1.2c)"}
+
+  - name: PKT_CNT
+    offset: 0x080
+    description: Packets of other protocols
+    fields:
+      - {name: USER, bits: "15:0", access: RC, reset: 0, description: Packets passed to the user port}
+      - {name: DISCARDED, bits: "31:16", access: RC, reset: 0, description: Packets discarded (no user port)}
+
+  - name: EVENTS
+    offset: 0x090
+    description: Event flags
+    fields:
+      - {name: PKT_DISCARD, bits: "8", access: W1C, reset: 0, description: Packet discarded by the packet routing}
+      - {name: ECC_DED, bits: "7", access: W1C, reset: 0, description: Double error detected in a buffer}
+      - {name: ECC_SEC, bits: "6", access: W1C, reset: 0, description: Single error corrected in a buffer}
+      - {name: INI_TIMEOUT, bits: "5", access: W1C, reset: 0, description: Command of the initiator confirmed with a timeout}
+      - {name: INI_ERROR, bits: "4", access: W1C, reset: 0, description: "Reply of the initiator discarded, unexpected or with a data error, or request rejected"}
+      - {name: INI_REPLY, bits: "3", access: W1C, reset: 0, description: Reply confirmed without error}
+      - {name: TGT_CMD, bits: "2", access: W1C, reset: 0, description: Command of the target executed with status 0}
+      - {name: TGT_DISCARD, bits: "1", access: W1C, reset: 0, description: Packet discarded by the target without reply}
+      - {name: TGT_ERROR, bits: "0", access: W1C, reset: 0, description: Command of the target ended with a status other than 0}
+
+  - name: IRQ_EN
+    offset: 0x094
+    description: Interrupt enable of the event flags
+    fields:
+      - {name: ENABLE, bits: "8:0", access: RW, reset: 0, description: Bit n enables EVENTS bit n}
+
+  - name: IRQ_STATUS
+    offset: 0x098
+    description: Interrupt output
+    fields:
+      - {name: IRQ, bits: "0", access: RO, description: "Irq: OR of the enabled event flags"}
+
+  - name: ECC_STATUS
+    offset: 0x0A0
+    description: EDAC status of the buffers
+    fields:
+      - {name: DED, bits: "2:0", access: RC, reset: 0, description: "Bit n: double error detected in channel n (0 write buffer of the target, 1 write data of the AXI master, 2 read data of the AXI master); any write clears all counters and flags"}
+
+  - name: ECC_SELECT
+    offset: 0x0A4
+    description: Channel shown in ECC_COUNT
+    fields:
+      - {name: CHANNEL, bits: "1:0", access: RW, reset: 0, description: Channel 0 to 2}
+
+  - name: ECC_COUNT
+    offset: 0x0A8
+    description: SEC and DED counters of the selected channel
+    fields:
+      - {name: DED, bits: "31:16", access: RC, reset: 0, description: Double errors detected}
+      - {name: SEC, bits: "15:0", access: RC, reset: 0, description: Single errors corrected; any write clears the selected channel}
+
+  - name: ECC_INJECT
+    offset: 0x0AC
+    description: Error injection into the next word written to a buffer (tests)
+    fields:
+      - {name: DOUBLE, bits: "9", access: W1, reset: 0, description: Inject a double error}
+      - {name: SINGLE, bits: "8", access: W1, reset: 0, description: Inject a single error}
+      - {name: CHANNEL, bits: "1:0", access: WO, reset: 0, description: Channel 0 to 2}
+
+arrays:
+  - name: WINDOW
+    base: 0x100
+    stride: 0x10
+    count: 8
+    description: "Address windows of the target (architecture D8), instance n = 0 to Windows_g - 1"
+    registers:
+      - name: WIN_CTRL
+        offset: 0x0
+        description: Enable and permissions of window n, high bytes of the 40-bit bounds
+        fields:
+          - {name: ENABLE, bits: "0", access: RW, reset: "WinInit_g(n)", description: Window enabled}
+          - {name: READ, bits: "1", access: RW, reset: "WinInit_g(n)", description: Read commands permitted}
+          - {name: WRITE, bits: "2", access: RW, reset: "WinInit_g(n)", description: Write commands permitted}
+          - {name: VERIFIED_ONLY, bits: "3", access: RW, reset: "WinInit_g(n)", description: Write commands only with the verify bit set}
+          - {name: RMW, bits: "4", access: RW, reset: "WinInit_g(n)", description: Read-modify-write commands permitted}
+          - {name: SINGLE, bits: "5", access: RW, reset: "WinInit_g(n)", description: Single-address accesses permitted}
+          - {name: BASE_EXT, bits: "15:8", access: RW, reset: "WinInit_g(n)", description: Bits 39 to 32 of the first address}
+          - {name: LAST_EXT, bits: "23:16", access: RW, reset: "WinInit_g(n)", description: Bits 39 to 32 of the last address}
+      - name: WIN_BASE
+        offset: 0x4
+        description: First address of window n, bits 31 to 0
+        fields:
+          - {name: ADDR, bits: "31:0", access: RW, reset: "WinInit_g(n)", description: First address}
+      - name: WIN_LAST
+        offset: 0x8
+        description: Last address of window n (inclusive), bits 31 to 0
+        fields:
+          - {name: ADDR, bits: "31:0", access: RW, reset: "WinInit_g(n)", description: Last address}
