@@ -94,7 +94,6 @@ architecture rtl of orm_ini_rx is
         OutValid : std_logic;
         OutData  : std_logic_vector(7 downto 0);
         OutLast  : std_logic;
-        RmValid  : std_logic;
         EvtHdr   : std_logic;
         EvtUnexp : std_logic;
         EvtData  : std_logic;
@@ -113,7 +112,6 @@ begin
         variable Len_v  : unsigned(24 downto 0);
     begin
         v          := r;
-        v.RmValid  := '0';
         v.EvtHdr   := '0';
         v.EvtUnexp := '0';
         v.EvtData  := '0';
@@ -285,7 +283,6 @@ begin
 
             when Conf_s =>
                 if Conf_Ready = '1' then
-                    v.RmValid := '1';
                     v.EvtData := r.DataErr;
                     v.EvtRx   := not r.DataErr;
                     v.Fsm     := Hdr_s;
@@ -313,8 +310,10 @@ begin
         r_next <= v;
     end process;
 
-    Lk_Tid         <= r.Tid;
-    Rm_Valid       <= r.RmValid;
+    Lk_Tid <= r.Tid;
+    -- The entry is removed in the cycle in which the reply is related to it, so its timer cannot expire while the
+    -- reply is received or its confirmation waits
+    Rm_Valid       <= '1' when r.Fsm = Lookup_s and Lk_Hit = '1' and Lk_Instr(5 downto 0) = r.Instr(5 downto 0) else '0';
     Rm_Tid         <= r.Tid;
     Conf_Valid     <= '1' when r.Fsm = Conf_s else '0';
     Conf_Tid       <= r.Tid;
@@ -340,7 +339,6 @@ begin
                 r.ReadFmt  <= '0';
                 r.Crc      <= (others => '0');
                 r.OutValid <= '0';
-                r.RmValid  <= '0';
                 r.EvtHdr   <= '0';
                 r.EvtUnexp <= '0';
                 r.EvtData  <= '0';

@@ -247,16 +247,18 @@ begin
         Stat_Open <= (others => '0');
     end generate;
 
-    -- Confirmations: reply before rejection before timeout, each source kept until its handshake
+    -- Confirmations: reply before rejection before timeout, each source kept until its handshake. A new choice is
+    -- made when no source is selected or the selected one is taken; the source just taken is skipped, because its
+    -- valid signal is still set in the cycle of its handshake.
     p_sel : process (all) is
     begin
         SelNext <= Sel;
         if Sel = 0 or M_Conf_Ready = '1' then
-            if RxValid = '1' and not (Sel = 1 and M_Conf_Ready = '1') then
+            if RxValid = '1' and Sel /= 1 then
                 SelNext <= 1;
-            elsif RejValid = '1' and not (Sel = 2 and M_Conf_Ready = '1') then
+            elsif RejValid = '1' and Sel /= 2 then
                 SelNext <= 2;
-            elsif ToValid = '1' and not (Sel = 3 and M_Conf_Ready = '1') then
+            elsif ToValid = '1' and Sel /= 3 then
                 SelNext <= 3;
             else
                 SelNext <= 0;

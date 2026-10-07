@@ -17,6 +17,7 @@ commands.
 | IN-IF-02 | The initiator shall send commands and receive replies as N-Char streams (`TData` 8 bit, end of packet marker as a separate beat with `TLast` = '1', `TData(0)` = '0' EOP, '1' EEP); the first character of a reply is the Initiator Logical Address. | 5.1.16 |
 | IN-IF-03 | The initiator shall return one confirmation per reply with an intact header (Transaction Identifier, instruction, status, Data Length, local error) and the data of read and read-modify-write replies on an 8-bit stream whose last byte carries `TLast`. | 5.3.3.9, 5.4.3.9, 5.5.3.10 |
 | IN-IF-04 | The initiator shall report sent commands, confirmed replies, discarded replies, data errors, timeouts and rejected requests as events, and the number of outstanding commands. | error information gathering of 5.3.3, 5.4.3, 5.5.3 |
+| IN-IF-05 | The reset input shall return the initiator from any state to the reception of a new request and an empty transaction table; the next request after the reset is executed normally. | none (D12) |
 
 ### 2.2 Command encoder (IN-1)
 
@@ -39,7 +40,7 @@ commands.
 
 | ID | Requirement | ECSS |
 | --- | --- | --- |
-| IN-TT-01 | With `Transactions_g` > 0 every command with the reply bit set shall be registered with its Transaction Identifier and instruction; a reply shall be confirmed only when a registered command has its Transaction Identifier and its command field and Reply Address Length, otherwise it is discarded ("unexpected reply"). | 5.1.8, 5.3.3.9b, 5.4.3.9b, 5.5.3.10b |
+| IN-TT-01 | With `Transactions_g` > 0 every command with the reply bit set shall be registered with its Transaction Identifier and instruction; a reply shall be confirmed only when a registered command has its Transaction Identifier and its command field and Reply Address Length, otherwise it is discarded ("unexpected reply"). The command is removed from the table when the reply is related to it, so that it cannot time out while the reply is received or its confirmation waits. | 5.1.8, 5.3.3.9b, 5.4.3.9b, 5.5.3.10b |
 | IN-TT-02 | A request with reply whose Transaction Identifier is registered shall not be sent; it shall be confirmed with the local error "Transaction Identifier in use". A request with reply shall wait while all entries are in use. | 5.1.8 note |
 | IN-TT-03 | A registered command whose reply has not arrived after the configured number of ticks shall be confirmed with the local error "timeout" and removed; a timeout of zero disables it. | 4.3.1 |
 | IN-TT-04 | With `Transactions_g` = 0 every reply with an intact header shall be confirmed. | 5.3.3.9 |

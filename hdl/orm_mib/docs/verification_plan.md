@@ -20,7 +20,7 @@ Simulator: GHDL.
 | Test ID | Description | Requirements |
 | --- | --- | --- |
 | `test_reset_values` (TC-MB-01) | Every register after reset, generics, configuration from the generics, windows 0 and 1 from `WinInit_g`, windows 2 to 7 and unused addresses read zero, configuration outputs | MG-IF-01, MG-IF-02, MG-RF-01, MG-RF-02, MG-RF-03, MG-RF-07 |
-| `test_config_registers` (TC-MB-02) | Write and read back of every RW register with unused bits set; the configuration outputs follow; every field of the four windows; window 5 ignores writes; read-only registers ignore writes | MG-IF-01, MG-IF-02, MG-RF-01, MG-RF-02 |
+| `test_config_registers` (TC-MB-02) | Write and read back of every RW register with unused bits set; the configuration outputs follow; every field of the four windows; the unused fourth word of a window reads zero; window 5 ignores writes; read-only registers ignore writes | MG-IF-01, MG-IF-02, MG-RF-01, MG-RF-02 |
 | `test_target_status` (TC-MB-03) | Last command of the target; commands with status 0 per kind; every status code of ECSS 5.6 and an unknown one; replies, Header CRC errors, incomplete headers, replies received; event flags | MG-IF-02, MG-RF-04 |
 | `test_initiator_status` (TC-MB-04) | Outstanding commands; every initiator event and every packet routing event counted; event flags of each source | MG-IF-02, MG-RF-04 |
 | `test_flags_counters` (TC-MB-05) | Write one clears only the written flags; a write clears both counters of its register only; saturation at 0xFFFF; events in the cycle of a counter clear and of a flag clear kept | MG-RF-05 |

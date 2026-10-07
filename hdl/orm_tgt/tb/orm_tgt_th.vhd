@@ -52,14 +52,18 @@ architecture sim of orm_tgt_th is
 
     signal Clk_i : std_logic := '0';
 
-    signal CmdData  : std_logic_vector(7 downto 0);
-    signal CmdLast  : std_logic;
-    signal CmdValid : std_logic;
-    signal CmdReady : std_logic;
-    signal RepData  : std_logic_vector(7 downto 0);
-    signal RepLast  : std_logic;
-    signal RepValid : std_logic;
-    signal RepReady : std_logic;
+    signal CmdData     : std_logic_vector(7 downto 0);
+    signal CmdLast     : std_logic;
+    signal CmdValid    : std_logic;
+    signal CmdReady    : std_logic;
+    signal RepData     : std_logic_vector(7 downto 0);
+    signal RepLast     : std_logic;
+    signal RepValid    : std_logic;
+    signal RepReady    : std_logic;
+    signal VvcCmdValid : std_logic;
+    signal VvcCmdReady : std_logic;
+    signal VvcRepValid : std_logic;
+    signal VvcRepReady : std_logic;
 
     signal AuthValid     : std_logic;
     signal AuthInstr     : std_logic_vector(7 downto 0);
@@ -205,9 +209,15 @@ begin
             Clk       => Clk_i,
             Out_Data  => CmdData,
             Out_Last  => CmdLast,
-            Out_Valid => CmdValid,
-            Out_Ready => CmdReady
+            Out_Valid => VvcCmdValid,
+            Out_Ready => VvcCmdReady
         );
+
+    -- Drop modes for the reset tests
+    CmdValid    <= VvcCmdValid and not Cfg.DropCmd;
+    VvcCmdReady <= '1' when Cfg.DropCmd = '1' else CmdReady;
+    VvcRepValid <= RepValid and not Cfg.DropRep;
+    RepReady    <= '1' when Cfg.DropRep = '1' else VvcRepReady;
 
     i_rep_vvc : entity work.orm_tb_axis_slave
         generic map (
@@ -218,8 +228,8 @@ begin
             Clk      => Clk_i,
             In_Data  => RepData,
             In_Last  => RepLast,
-            In_Valid => RepValid,
-            In_Ready => RepReady
+            In_Valid => VvcRepValid,
+            In_Ready => VvcRepReady
         );
 
     i_ram : entity work.orm_tb_axi_ram
@@ -230,6 +240,7 @@ begin
         )
         port map (
             Clk     => Clk_i,
+            Rst     => Rst,
             AwAddr  => AwAddr,
             AwLen   => AwLen,
             AwSize  => AwSize,

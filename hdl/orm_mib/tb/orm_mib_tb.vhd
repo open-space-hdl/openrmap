@@ -319,6 +319,11 @@ begin
                                 error, "window " & to_string(n) & " last output");
                 end loop;
 
+                -- The fourth word of a window is unused
+                regWrite(win(1, RegWinCtrl_c) + 16#C#, x"FFFFFFFF");
+                regCheck(win(1, RegWinCtrl_c) + 16#C#, x"00000000", "unused word of a window reads zero");
+                regCheck(win(1, RegWinCtrl_c), x"00312102", "window 1 unchanged");
+
                 -- Windows beyond Windows_g ignore writes
                 regWrite(win(5, RegWinCtrl_c), x"00000000");
                 regWrite(win(5, RegWinBase_c), x"00001000");

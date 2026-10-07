@@ -423,18 +423,23 @@ begin
                 check_value(Obs.HdrShortCnt, 14, error, "incomplete headers counted");
 
                 -- ECSS 5.3.3.4.3: EEP immediately after the Header CRC
-                Cmd_v := tbCmd(x"6C", 16#100#, 4);
+                Cmd_v     := tbCmd(x"6C", 16#100#, 4);
                 send(tbHead(tbCommand(Cmd_v, tbBytes(4)), 16), eep => true);
                 finish(1, "EEP after a write header");
                 checkInd(StatusEep_c, '0', "EEP after a write header");
-                Cmd_v := tbCmd(x"4C", 16#100#, 4);
+                Cmd_v     := tbCmd(x"4C", 16#100#, 4);
                 send(tbCommand(Cmd_v, tbBytes(0)), eep => true);
                 finish(1, "EEP after a read header");
                 checkInd(StatusEep_c, '0', "EEP after a read header");
-                Cmd_v := tbCmd(InstrRmw_c, 16#100#, 2);
+                Cmd_v     := tbCmd(InstrRmw_c, 16#100#, 2);
                 send(tbHead(tbCommand(Cmd_v, tbBytes(2)), 16), eep => true);
                 finish(1, "EEP after a read-modify-write header");
                 checkInd(StatusEep_c, '0', "EEP after a read-modify-write header");
+                Cmd_v     := tbCmd(x"6C", 16#100#, 4);
+                Cmd_v.Key := x"99";
+                send(tbHead(tbCommand(Cmd_v, tbBytes(4)), 16), eep => true);
+                finish(1, "EEP after the header of a rejected command");
+                checkInd(StatusEep_c, '0', "EEP after the header of a rejected command");
                 checkNoReply("EEP after the header");
                 -- ECSS 5.7.1.3b: a reply at the target is discarded
                 send(tbWriteReply(tbCmd(x"6C"), x"00"));
@@ -606,6 +611,16 @@ begin
                 checkMem(16#400#, tbBytes(64, 9), "complete chunks written");
                 checkMem(16#440#, tbBytes(36, 200 + 64), "incomplete chunk not written");
                 check_value(Mem_v.bytesWritten(0), 64, error, "64 bytes written");
+                -- The same with a slow memory: the incomplete chunk is discarded after the complete ones are written
+                Mem_v.setStall(0, 85);
+                Mem_v.fill(0, 16#400#, 100, 200);
+                Mem_v.clearStats(0);
+                send(tbHead(tbCommand(Cmd_v, tbBytes(100, 9)), 16 + 70));
+                expect(tbWriteReply(Cmd_v, StatusEarlyEop_c), "early EOP, slow memory");
+                finish(1, "early EOP, slow memory");
+                checkMem(16#400#, tbBytes(64, 9), "complete chunks written, slow memory");
+                check_value(Mem_v.bytesWritten(0), 64, error, "64 bytes written, slow memory");
+                Mem_v.setStall(0, 0);
                 -- EEP after 40 data bytes: one chunk written
                 Mem_v.fill(0, 16#600#, 100, 50);
                 Mem_v.clearStats(0);
@@ -709,6 +724,19 @@ begin
                 send(tbCommand(Cmd_v, tbBytes(8)), eep => true);
                 expect(tbWriteReply(Cmd_v, StatusEep_c), "rejected write with EEP");
                 finish(1, "rejected write with EEP");
+                send(tbHead(tbCommand(Cmd_v, tbBytes(8)), 20));
+                expect(tbWriteReply(Cmd_v, StatusEarlyEop_c), "rejected write with an early EOP");
+                finish(1, "rejected write with an early EOP");
+                send(tbCat(tbCommand(Cmd_v, tbBytes(8)), tbBytes(2)));
+                expect(tbWriteReply(Cmd_v, StatusTooMuch_c), "rejected write with too much data");
+                finish(1, "rejected write with too much data");
+                send(tbCommand(Cmd_v, tbBytes(8), dataCrcErr => true));
+                expect(tbWriteReply(Cmd_v, StatusDataCrc_c), "rejected write with a Data CRC error");
+                finish(1, "rejected write with a Data CRC error");
+                send(tbCommand(tbCmd(x"64", 16#100#, 8), tbBytes(8)));
+                finish(1, "rejected write without reply");
+                checkInd(StatusNotAuth_c, '0', "rejected write without reply");
+                checkNoReply("rejected write without reply");
                 -- ECSS 5.5.3.4.8: read-modify-write data is checked before the authorisation is requested
                 Cnt_v          := Obs.IndCnt;
                 Sent_v         := Obs.AuthCnt;
@@ -800,12 +828,103 @@ begin
 
                 finish(40, "commands back to back");
 
+                -- Write buffer full: a slow memory holds the command stream
+                shared_axistream_vvc_config(VvcCmd_c).bfm_config.valid_low_at_word_num := 0;
+                shared_axistream_vvc_config(VvcCmd_c).bfm_config.valid_low_duration    := 0;
+                Mem_v.setStall(0, 90);
+                Cmd_v                                                                  := tbCmd(x"6C", 16#5000#, 1000, 950);
+                send(tbCommand(Cmd_v, tbBytes(1000, 17)));
+                expect(tbWriteReply(Cmd_v, x"00"), "write with a full buffer");
+                finish(1, "write with a full buffer");
+                checkMem(16#5000#, tbBytes(1000, 17), "write with a full buffer");
+                Mem_v.setStall(0, 40);
+
+                -- Replies requested while the encoder still sends the previous one
+                shared_axistream_vvc_config(VvcRep_c).bfm_config.ready_low_at_word_num := 0;
+                shared_axistream_vvc_config(VvcRep_c).bfm_config.ready_low_duration    := 40;
+
+                for i in 0 to 2 loop
+                    Cmd_v := tbCmd(x"6C", 16#100#, 0, 900 + i);
+                    send(tbCommand(Cmd_v, tbBytes(0)));
+                    expect(tbWriteReply(Cmd_v, x"00"), "zero-length write " & to_string(i));
+                end loop;
+
+                finish(3, "replies back to back");
+
+            elsif run("test_reset") then
+                -- TC-TG-16: reset at every cycle of five commands, the target works after each reset
+                Mem_v.fill(0, 0, 4096, 16#20#);
+                Cfg.DropRep <= '1';
+
+                for kind in 0 to 4 loop
+
+                    for k in 1 to 140 loop
+
+                        case kind is
+
+                            when 0 =>
+                                Cmd_v := tbCmd(x"7C", 16#100#, 40, k);
+                                send(tbCommand(Cmd_v, tbBytes(40, k)));
+
+                            when 1 =>
+                                Cmd_v := tbCmd(x"6C", 16#200#, 100, k);
+                                send(tbCommand(Cmd_v, tbBytes(100, k)));
+
+                            when 2 =>
+                                Cmd_v           := tbCmd(x"4D", 16#300#, 64, k);
+                                Cmd_v.ReplyAddr := x"0000000000000000" & x"CCBBAA99";
+                                send(tbCommand(Cmd_v, tbBytes(0)));
+
+                            when 3 =>
+                                Cmd_v := tbCmd(InstrRmw_c, 16#400#, 8, k);
+                                send(tbCommand(Cmd_v, tbBytes(8, k)));
+
+                            when others =>
+                                Cmd_v     := tbCmd(x"6C", 16#500#, 40, k);
+                                Cmd_v.Key := x"99";
+                                send(tbCommand(Cmd_v, tbBytes(40, k)));
+
+                        end case;
+
+                        for i in 1 to k loop
+                            wait until rising_edge(Clk);
+                        end loop;
+
+                        Rst         <= '1';
+                        Cfg.DropCmd <= '1';
+                        await_completion(AXISTREAM_VVCT, VvcCmd_c, 1 ms, "rest of the command dropped");
+                        wait until rising_edge(Clk);
+                        Rst         <= '0';
+                        Cfg.DropCmd <= '0';
+                        wait until rising_edge(Clk);
+                        if k mod 20 = 0 then
+                            Cfg.DropRep <= '0';
+                            Cnt_v       := Obs.IndCnt;
+                            readCmd(x"4C", 16#F00#, 4, memBytes(16#F00#, 4), "read after a reset");
+                            Cfg.DropRep <= '1';
+                        end if;
+                    end loop;
+
+                end loop;
+
+                Cfg.DropRep <= '0';
+                Cnt_v       := Obs.IndCnt;
+                writeCmd(x"7C", 16#F00#, tbBytes(16, 5), x"00", "write after the resets");
+                checkMem(16#F00#, tbBytes(16, 5), "write after the resets");
+
             elsif run("test_ecc") then
                 -- TC-TG-15: errors in the data buffers
                 inject("001", '0');
                 writeCmd(x"7C", 16#100#, tbBytes(8), x"00", "single error in the write buffer");
                 checkMem(16#100#, tbBytes(8), "corrected data");
                 check_value(Obs.SecCnt, 1, error, "single error counted");
+                inject("010", '0');
+                writeCmd(x"6C", 16#180#, tbBytes(8, 1), x"00", "single error in the write data of the master");
+                checkMem(16#180#, tbBytes(8, 1), "corrected write data");
+                Mem_v.fill(0, 16#1C0#, 8, 7);
+                inject("100", '0');
+                readCmd(x"4C", 16#1C0#, 8, tbBytes(8, 7), "single error in the read data of the master");
+                check_value(Obs.SecCnt, 3, error, "single errors counted");
                 inject("001", '1');
                 writeCmd(x"7C", 16#200#, tbBytes(8), StatusGeneral_c, "double error in the write buffer");
                 check_value(Obs.DedCnt, 1, error, "double error counted");

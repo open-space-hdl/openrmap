@@ -222,7 +222,8 @@ begin
                 v.Dest := destination(r.Buf, r.Num);
                 v.Idx  := 0;
                 if v.Dest = DestDrop then
-                    if Passthrough_g or (r.Num = 3 and r.Buf(2).Last = '0' and r.Buf(1).Data = ProtocolId_c) then
+                    -- Three data characters and the Protocol Identifier: a command at an initiator-only node
+                    if r.Num = 3 and r.Buf(2).Last = '0' and r.Buf(1).Data = ProtocolId_c then
                         v.EvtCmdRx := '1';
                     else
                         v.EvtDisc := '1';

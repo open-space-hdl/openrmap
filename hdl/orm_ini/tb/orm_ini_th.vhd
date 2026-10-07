@@ -52,6 +52,10 @@ architecture sim of orm_ini_th is
     signal DataData     : std_logic_vector(7 downto 0);
     signal DataValid    : std_logic;
     signal DataReady    : std_logic;
+    signal VvcDataValid : std_logic;
+    signal VvcDataReady : std_logic;
+    signal VvcCmdValid  : std_logic;
+    signal VvcCmdReady  : std_logic;
     signal ConfValid    : std_logic;
     signal ConfTid      : std_logic_vector(15 downto 0);
     signal ConfInstr    : std_logic_vector(7 downto 0);
@@ -150,9 +154,15 @@ begin
         port map (
             Clk       => Clk_i,
             Out_Data  => DataData,
-            Out_Valid => DataValid,
-            Out_Ready => DataReady
+            Out_Valid => VvcDataValid,
+            Out_Ready => VvcDataReady
         );
+
+    -- Drop modes for the reset test
+    DataValid    <= VvcDataValid and not Cfg.DropData;
+    VvcDataReady <= '1' when Cfg.DropData = '1' else DataReady;
+    VvcCmdValid  <= CmdValid and not Cfg.DropCmd;
+    CmdReady     <= '1' when Cfg.DropCmd = '1' else VvcCmdReady;
 
     i_cmd_vvc : entity work.orm_tb_axis_slave
         generic map (
@@ -163,8 +173,8 @@ begin
             Clk      => Clk_i,
             In_Data  => CmdData,
             In_Last  => CmdLast,
-            In_Valid => CmdValid,
-            In_Ready => CmdReady
+            In_Valid => VvcCmdValid,
+            In_Ready => VvcCmdReady
         );
 
     i_rep_vvc : entity work.orm_tb_axis_master

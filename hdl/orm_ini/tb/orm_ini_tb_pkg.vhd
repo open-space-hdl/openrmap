@@ -65,12 +65,17 @@ package orm_ini_tb_pkg is
         TickCycles : std_logic_vector(15 downto 0);
         Timeout    : std_logic_vector(15 downto 0);
         ConfReady  : std_logic;
+        -- '1': the harness drops the characters of the data VVC, takes and drops the commands
+        DropData   : std_logic;
+        DropCmd    : std_logic;
     end record;
 
     constant IniCfgInit_c : IniCfg_t := (
         TickCycles => x"0009", -- Tick every 10 cycles (100 ns)
         Timeout    => x"0000",
-        ConfReady  => '1'
+        ConfReady  => '1',
+        DropData   => '0',
+        DropCmd    => '0'
     );
 
     -- Confirmation log

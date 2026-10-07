@@ -475,10 +475,11 @@ begin
                 regCheck(A_c, RegGenerics_c, x"08040147", "A: with user port");
                 userSend(A_c, tbCat(tbCat(tbOne(x"30"), tbOne(x"02")), tbBytes(10)));
                 userSend(A_c, tbOne(x"30"));
+                userSend(A_c, tbCat(tbOne(x"30"), tbOne(x"05")));
                 transfer(A_c, x"7C", 16#100#, 16, 1, tbBytes(16, 3), x"00", "00", "write");
                 awaitStreams;
                 checkMem(B_c, 16#100#, tbBytes(16, 3), "write");
-                regCheck(B_c, RegPktCnt_c, x"00020000", "B: two packets discarded");
+                regCheck(B_c, RegPktCnt_c, x"00030000", "B: three packets discarded");
                 regCheck(B_c, RegEvents_c, x"00000104", "B: PKT_DISCARD, TGT_CMD");
 
             elsif run("test_mib") then

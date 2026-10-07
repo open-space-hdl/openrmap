@@ -39,7 +39,7 @@ entity orm_ini_tt is
         Reg_Instr      : in    std_logic_vector(7 downto 0);
         Reg_Ready      : out   std_logic; -- A free entry
         Reg_Busy       : out   std_logic; -- Reg_Tid is in use
-        -- Lookup and removal (decoder)
+        -- Lookup and removal (decoder): Rm_Valid in the cycle of the lookup of Rm_Tid
         Lk_Tid         : in    std_logic_vector(15 downto 0);
         Lk_Hit         : out   std_logic;
         Lk_Instr       : out   std_logic_vector(7 downto 0);
@@ -135,12 +135,13 @@ begin
             end if;
         end loop;
 
-        -- Removal of a completed command
+        -- Removal of the command of a reply, in the cycle of its lookup: a timer that expires in this cycle is void
         if Rm_Valid = '1' then
 
             for i in 0 to Transactions_g - 1 loop
                 if r.Valid(i) = '1' and r.Expired(i) = '0' and r.Tid(i) = Rm_Tid then
-                    v.Valid(i) := '0';
+                    v.Valid(i)   := '0';
+                    v.Expired(i) := '0';
                 end if;
             end loop;
 

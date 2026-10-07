@@ -17,4 +17,5 @@ Findings:
 
 | Finding | Resolution |
 | --- | --- |
+| Code coverage: the event of a discarded packet tested `Passthrough_g`, which cannot change the result | Term removed; the event follows from the first three characters only |
 | With eight outstanding commands per initiator and both cores accessing each other, both multiplexers stalled on the end of packet marker of a command: each target waited to send a reply behind a command of its own initiator (section 4 of the architecture) | Integration constraint in the specification and the user guide: one outstanding command with reply per initiator between mutual initiators, or receive buffering. The core tests with mutual initiators run with `Transactions_g` = 1; TC-CO-09 covers eight outstanding commands of one initiator |
