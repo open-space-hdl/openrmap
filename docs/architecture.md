@@ -148,7 +148,7 @@ Three properties of the standard shape the architecture more than any single fea
  M_Pkt (to SpW)   <--| CO-2 mux <---+------- | ---------- TG-5 reply encoder <---+              |
                      |   ^   ^      |        |                                                  |
                      |   |   |      +--> IN-2 reply decoder --> IN-3 table --> M_Conf, M_RepData |
-                     |   |   +---------- IN-1 command encoder <-------------- S_Cmd, S_CmdData  |
+                     |   |   +---------- IN-1 command encoder <-------------- S_Req, S_ReqData  |
                      |   +-------------- S_User (user packets)                                   |
                      |              +--> M_User (packets of other protocols)                     |
                      |   MG-1 register file, MG-2 EDAC monitor <-------------- S_AxiLite, Irq    |
