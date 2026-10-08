@@ -19,6 +19,9 @@ clause 5.8. Synthesis results on a target device and a hardware test are open; s
 
 ## Documentation
 
+The documents are also published as a website: [openspacehdl.org/openrmap](https://openspacehdl.org/openrmap/) (built
+from this repository by `tools/docs/`).
+
 | Document | Content |
 | --- | --- |
 | [docs/architecture.md](docs/architecture.md) | Architecture: building blocks, owned ECSS clauses, Open Logic usage, verification |
@@ -39,6 +42,7 @@ openrmap/
 |-- tb/               Verification components shared by the testbenches (RMAP model, AXI memory model)
 |-- lint/             VSG configuration (Open Logic rules), synthesizability check
 |-- tools/            Compliance matrix and register map generators, synthesis script for AMD Vivado
+|   `-- docs/         Documentation website (MkDocs)
 |-- sw/               C header of the register map (generated)
 |-- open-logic/       Git submodule: Open Logic (fault-tolerant entities branch)
 |-- uvvm/             Git submodule: UVVM verification framework
@@ -70,6 +74,7 @@ python lint/lint.py                 # VSG, no errors and no warnings
 python lint/synth_check.py          # synthesizability of three node types with GHDL
 python tools/compliance.py --check  # every ECSS clause and requirement traced to a test case
 python tools/regmap.py --check      # generated register map files match hdl/omap_mib/regs/omap_regs.yml
+python -m mkdocs build -f tools/docs/mkdocs.yml  # documentation website, fails on broken links
 ```
 
 ## Licence
