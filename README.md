@@ -1,5 +1,7 @@
 # OpenRMAP
 
+[![TRL 3](docs/img/trl-3.svg)](https://openspacehdl.org/trl/)
+
 OpenRMAP is an open Remote Memory Access Protocol (RMAP) implementation that is based on the Open Logic VHDL
 Library. It implements an RMAP Target and an RMAP Initiator according to ECSS-E-ST-50-52C (SpaceWire: Remote memory
 access protocol) and connects to the packet ports of a SpaceWire port such as the OpenWire core. The Target accesses
@@ -8,6 +10,10 @@ interfaces; configuration, status and error information are in a register file b
 buffers use the fault-tolerant entities of [Open Logic](https://github.com/open-logic/open-logic) (SECDED ECC).
 
 ## Status
+
+**Technology readiness level: TRL 3** (fully verified by simulation). The core has not been tested on
+hardware yet and has no flight heritage; see [what the levels mean](https://openspacehdl.org/trl/) and the next
+steps in the [roadmap](docs/roadmap.md#technology-readiness).
 
 The core is complete and verified in simulation (GHDL and QuestaSim, 50 test cases at unit and core level, statement,
 branch and state machine coverage closed, see [docs/coverage.md](docs/coverage.md)); the

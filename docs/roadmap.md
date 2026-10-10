@@ -3,6 +3,16 @@
 The development follows the plan of the [architecture](architecture.md) (section 11). This page tracks the state of
 every module; a module is done when its verification report is written and its regression is green.
 
+## Technology readiness
+
+The core is at **TRL 3**: fully verified by simulation, not yet tested on hardware, no flight heritage. The
+[TRL page](https://openspacehdl.org/trl/) explains what the levels mean for an IP core.
+
+| Next level | What is needed | State |
+| --- | --- | --- |
+| TRL 4 | Synthesis and timing closure on a target FPGA; hardware test together with a SpaceWire port (e.g. OpenWire): Target and Initiator against independent RMAP equipment; hardware test plan and test report | Open (see the open items) |
+| TRL 5 | Single-event effects test (beam test) on a radiation-tolerant FPGA with the core in operation that confirms the single-event mitigation and quantifies the error rates; operation over the temperature range | Open |
+
 ## Modules
 
 | Module | Blocks (architecture section 7) | Status |
