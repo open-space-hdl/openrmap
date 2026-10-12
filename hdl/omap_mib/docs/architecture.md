@@ -2,15 +2,8 @@
 
 ## 1. Block diagram
 
-```text
- AXI4-Lite --> olo_axi_lite_slave --> Rb_Wr, Rb_Rd --> MG-1 register file --> Cfg_* (Target, Initiator)
-               (10-bit address)  <-- Rb_RdData   <--   configuration       <-- Tgt_Ind*, Tgt_Evt*
-                                                       last command        <-- Ini_Evt*, Ini_Open
-                                                       counters, flags     <-- Pkt_Evt*
- Irq <------------------------------------------------ interrupt
-                                                       MG-2 olo_ft_ecc_monitor <-- Ecc_Sec, Ecc_Ded (3 channels)
-                                                       injection commands      --> Inj_Valid, Inj_Double
-```
+![Block diagram of omap_mib: bus interface (olo_axi_lite_slave), register file (MG-1) and EDAC monitor
+(olo_ft_ecc_monitor, MG-2)](img/omap_mib_arch.drawio.svg)
 
 All of `omap_mib` runs in `Clk`, the clock of the core.
 
