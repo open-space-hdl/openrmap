@@ -2,25 +2,17 @@
 
 ## 1. Block diagram
 
-```text
-                +---------------------------------------------------------------------------+
- S_Pkt -------->| CO-1 omap_core_demux --+--> omap_target (Target_g) -----> M_Axi, Auth, Ind     |
-                |   (3-character        |        | replies                                  |
-                |    lookahead)         |        v                                          |
- M_Pkt <--------| CO-2 omap_core_mux <---+------- + <--- omap_initiator (Initiator_g) <-- S_Req,    |
-                |   (olo_base_arb_rr,   |        commands      | replies     S_ReqData      |
-                |    packet lock)       +----------------------+--> M_Conf, M_RepData       |
- M_User <-------|   user packets <------+                                                   |
- S_User ------->|   user packets ------> CO-2                                               |
-                |   omap_mib: configuration, status, counters, EDAC <-- S_AxiLite, --> Irq   |
-                +---------------------------------------------------------------------------+
-```
+![Block diagram of omap_core: demultiplexer (CO-1), omap_target, omap_initiator, multiplexer (CO-2) and omap_mib with
+the signal groups between them](img/omap_core_arch.drawio.svg)
 
 All blocks run in `Clk`. Without Target or Initiator the generate branch drives their outputs to zero and accepts
 every character offered to them; without user port the user packets are discarded by the demultiplexer and
 `S_User_TReady` stays '0'.
 
 ## 2. Packet demultiplexer (CO-1, `omap_core_demux`)
+
+![State machine of the packet demultiplexer: Head_s, Decide_s, Replay_s, Pass_s,
+Drop_s](img/omap_core_demux_fsm.drawio.svg)
 
 | State | Action |
 | --- | --- |

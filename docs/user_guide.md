@@ -210,5 +210,5 @@ python lint/lint.py                         # VSG
 python lint/synth_check.py                  # synthesizability of three node types with GHDL
 python tools/compliance.py --check          # ECSS traceability
 python tools/regmap.py --check              # generated register map up to date
-python tools/synth_vivado.py --part <part>  # resources and timing with AMD Vivado (licence for the part needed)
+python tools/synth_vivado.py --part <part>  # resources and timing with AMD Vivado
 ```

@@ -2,21 +2,16 @@
 
 ## 1. Overview
 
-```text
- S_Req, S_Data --> IN-1 omap_initiator_tx --> M_Cmd
-                       |   ^ register / TID in use / free entry
-                       v   |
-                     IN-3 omap_initiator_tt --- timeout ---+
-                       ^   | lookup / remove         |
-                       |   v                         v
- S_Rep -------------> IN-2 omap_initiator_rx --> M_Data   confirmation selection --> M_Conf
-                                      \--------------------^      ^ rejection (IN-1)
-```
+![Block diagram of omap_initiator: command encoder (IN-1), transaction table (IN-3), confirmation selection and reply
+decoder (IN-2)](img/omap_initiator_arch.drawio.svg)
 
 All blocks run in `Clk`. Confirmations come from three sources: replies (IN-2), rejected requests (IN-1) and timeouts
 (IN-3). A source is selected when the output is free, in this order, and kept until its handshake.
 
 ## 2. Command encoder (IN-1, `omap_initiator_tx`)
+
+![State machine of the command encoder: Idle_s, Check_s, Path_s, Head_s, HeadCrc_s, Data_s, DataCrc_s, Eop_s, and
+Reject_s, Drop_s for a Transaction Identifier in use](img/omap_initiator_tx_fsm.drawio.svg)
 
 | State | Action |
 | --- | --- |
@@ -31,6 +26,9 @@ All blocks run in `Clk`. Confirmations come from three sources: replies (IN-2), 
 The output is a register that takes a character when it is empty or being read.
 
 ## 3. Reply decoder (IN-2, `omap_initiator_rx`)
+
+![State machine of the reply decoder: Hdr_s, Lookup_s, Data_s, Flush_s, Conf_s and
+Drop_s](img/omap_initiator_rx_fsm.drawio.svg)
 
 The decoder counts the header characters. The instruction (third character) selects the format: read format for the
 read and read-modify-write command codes, write format otherwise; the Header CRC follows after 7 or 11 characters.

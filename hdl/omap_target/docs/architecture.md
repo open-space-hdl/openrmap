@@ -2,19 +2,17 @@
 
 ## 1. Overview
 
-```text
- S_Cmd --> TG-1 omap_target_rx --header--> TG-3 omap_target_ctrl --command--> TG-4 omap_target_mem --> M_Axi
-                      |                 |   ^   |  write buffer          |   ^
-                      +---data, end---->+   |   +---write data---------->+   |
-                                        |   +-------read data----------------+
-                       TG-2 omap_target_auth <-> |
-                                        +--reply request, data, end--> TG-5 omap_target_tx --> M_Rep
-```
+![Block diagram of omap_target: command decoder (TG-1), authorisation (TG-2), command controller (TG-3), memory access
+(TG-4) and reply encoder (TG-5)](img/omap_target_arch.drawio.svg)
 
-All blocks run in `Clk`; every interface between them is a valid / ready handshake. The controller executes one
-command at a time (architecture D3).
+All blocks run in `Clk`. The streams between them (header, data, end of packet, memory command, write and read
+bytes, reply request, reply data and reply end) have a valid / ready handshake; the authorisation answers a start
+pulse two cycles later (section 3), and the memory access reports `Mem_Busy` and `Mem_Err` as levels. The
+controller executes one command at a time (architecture D3).
 
 ## 2. Command decoder (TG-1, `omap_target_rx`)
+
+![State machine of the command decoder: Hdr_s, HdrOut_s, Data_s, EndOut_s and Drop_s](img/omap_target_rx_fsm.drawio.svg)
 
 The decoder counts the characters of the header. The Instruction (third character) gives the size of the Reply
 Address; the fields after it are located relative to its end: Initiator Logical Address, Transaction Identifier,
@@ -46,6 +44,10 @@ failing check in the order of architecture decision D9 (2, 12, 3, 11, 9, 10). Th
 `Start`.
 
 ## 4. Command controller (TG-3, `omap_target_ctrl`)
+
+![State machine of the command controller: Idle_s, Auth_s and Ext_s, the command states per command kind (Drain_s,
+WrData_s, RmwData_s to RmwWrite_s, RdWait_s to RdEnd_s), Reply_s to RepEnd_s and
+Done_s](img/omap_target_ctrl_fsm.drawio.svg)
 
 | State | Action |
 | --- | --- |
@@ -96,6 +98,9 @@ master; the controller clears it at the start of every command.
 The master runs in its high-latency mode with data buffers of two bursts of `AxiMaxBeats_g` words.
 
 ## 6. Reply encoder (TG-5, `omap_target_tx`)
+
+![State machine of the reply encoder: Idle_s, Path_s, Head_s, HeadCrc_s, Data_s, End_s, DataCrc_s,
+Mark_s](img/omap_target_tx_fsm.drawio.svg)
 
 The Reply Address field is shifted so that its first byte is the top byte; leading 0x00 bytes are skipped until the
 first non-zero byte or the last byte. The header bytes (7 for a write reply, 11 for a read or read-modify-write

@@ -140,20 +140,9 @@ Three properties of the standard shape the architecture more than any single fea
 
 ## 6 Architecture overview
 
-```text
-                     +-------------------------------------------------------------------------+
- S_Pkt (from SpW) -->| CO-1 demux --+--> TG-1 decoder --> TG-3 controller --> TG-4 memory ----+--> M_Axi (AXI4)
-                     |              |        |              |   (TG-2 auth)      |              |
-                     |              |        |              v                    v              |
- M_Pkt (to SpW)   <--| CO-2 mux <---+------- | ---------- TG-5 reply encoder <---+              |
-                     |   ^   ^      |        |                                                  |
-                     |   |   |      +--> IN-2 reply decoder --> IN-3 table --> M_Conf, M_RepData |
-                     |   |   +---------- IN-1 command encoder <-------------- S_Req, S_ReqData  |
-                     |   +-------------- S_User (user packets)                                   |
-                     |              +--> M_User (packets of other protocols)                     |
-                     |   MG-1 register file, MG-2 EDAC monitor <-------------- S_AxiLite, Irq    |
-                     +-------------------------------------------------------------------------+
-```
+![Architecture overview of omap_core: the packet demultiplexer (CO-1) and multiplexer (CO-2), the Target (TG-1 to TG-5)
+and the Initiator (IN-1 to IN-3) between the packet ports and the user side, with the register file and EDAC monitor
+(MG-1, MG-2) above](img/omap_core_overview.drawio.svg)
 
 Received packets are dispatched by their Protocol Identifier and packet type: commands to the Target, replies to
 the Initiator, packets of other protocols to the user port. The Target decodes a command, authorises it, accesses
