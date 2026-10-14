@@ -114,6 +114,10 @@ end entity;
 ---------------------------------------------------------------------------------------------------
 architecture rtl of omap_target_ctrl is
 
+    -- Largest command of the memory block: longer reads are split, chunks are at most this long
+    constant MaxCmd_c : positive := memMaxCmd(AxiAddrWidth_g, AxiDataWidth_g);
+    constant Chunk_c  : positive := minimum(ChunkBytes_g, MaxCmd_c);
+
     type Fsm_t is (
         Idle_s, Auth_s, Ext_s, Drain_s, WrData_s, RdWait_s, RdExec_s, RdEnd_s, RmwData_s, RmwExt_s, RmwRead_s,
         RmwWrite_s, Reply_s, RepData_s, RepEnd_s, Done_s
@@ -154,6 +158,7 @@ architecture rtl of omap_target_ctrl is
         ErrClr     : std_logic;
         -- Read and read-modify-write
         Fwd        : unsigned(23 downto 0);
+        Issued     : unsigned(23 downto 0);
         RmwBuf     : Bytes8_t;
         RmwIdx     : natural range 0 to 8;
         RdBuf      : Bytes4_t;
@@ -209,6 +214,29 @@ begin
         variable PumpOk_v : boolean;
         variable Drain_v  : boolean;
         variable Ack_v    : boolean;
+
+        -- Next command of a read longer than the largest command of the memory block (architecture D6): issued when
+        -- the previous one is taken, at the following address (incrementing) or the same address (single address)
+        procedure readSplit (
+            signal rIn  : in    TwoProcess_r;
+            variable vo : inout TwoProcess_r;
+            len         : in    unsigned(23 downto 0)) is
+        begin
+            if rIn.CmdPend = '0' and rIn.Issued /= len then
+                vo.CmdPend := '1';
+                if rIn.H.Instr(InstrInc_c) = '1' then
+                    vo.CmdAddr := unsigned(rIn.H.Addr) + resize(rIn.Issued, 40);
+                end if;
+                if len - rIn.Issued > MaxCmd_c then
+                    vo.CmdSize := to_unsigned(MaxCmd_c, 24);
+                else
+                    vo.CmdSize := len - rIn.Issued;
+                end if;
+                vo.Issued := rIn.Issued + vo.CmdSize;
+            end if;
+        end procedure;
+
+    -- Comment for the style checker: procedures above, statements below
     begin
         v           := r;
         v.AuthStart := '0';
@@ -405,9 +433,9 @@ begin
                 -- Chunks complete in the buffer (all remaining bytes once the Data Length is received)
                 Avail_v := r.Received - r.Committed;
                 if r.CmdPend = '0' and r.CommitEn = '1' and Avail_v /= 0 and
-                   (Avail_v >= ChunkBytes_g or r.Received = Len_v) then
-                    if Avail_v >= ChunkBytes_g then
-                        Size_v := to_unsigned(ChunkBytes_g, 24);
+                   (Avail_v >= Chunk_c or r.Received = Len_v) then
+                    if Avail_v >= Chunk_c then
+                        Size_v := to_unsigned(Chunk_c, 24);
                     else
                         Size_v := Avail_v;
                     end if;
@@ -480,9 +508,14 @@ begin
                         v.CmdWrite  := '0';
                         v.CmdSingle := not r.H.Instr(InstrInc_c);
                         v.CmdAddr   := unsigned(r.H.Addr);
-                        v.CmdSize   := Len_v;
-                        v.RepLen    := Len_v;
-                        v.Fsm       := RdExec_s;
+                        if Len_v > MaxCmd_c then
+                            v.CmdSize := to_unsigned(MaxCmd_c, 24);
+                        else
+                            v.CmdSize := Len_v;
+                        end if;
+                        v.Issued := v.CmdSize;
+                        v.RepLen := Len_v;
+                        v.Fsm    := RdExec_s;
                     end if;
                 end if;
 
@@ -492,8 +525,10 @@ begin
                 if Rep_Ready = '1' then
                     v.Fsm := RdEnd_s;
                 end if;
+                readSplit(r, v, Len_v);
 
             when RdEnd_s =>
+                readSplit(r, v, Len_v);
                 RepData_Valid <= MemRd_Valid when r.Fwd /= Len_v else '0';
                 MemRd_Ready   <= RepData_Ready when r.Fwd /= Len_v else '0';
                 if MemRd_Valid = '1' and RepData_Ready = '1' and r.Fwd /= Len_v then

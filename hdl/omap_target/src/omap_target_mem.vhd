@@ -25,6 +25,9 @@ library olo;
     use olo.olo_base_pkg_math.all;
     use olo.olo_ft_pkg_ecc.all;
 
+library work;
+    use work.omap_pkg.all;
+
 ---------------------------------------------------------------------------------------------------
 -- Entity
 ---------------------------------------------------------------------------------------------------
@@ -105,7 +108,7 @@ end entity;
 architecture rtl of omap_target_mem is
 
     constant WordBytes_c : positive := AxiDataWidth_g / 8;
-    constant SizeBits_c  : positive := minimum(24, AxiAddrWidth_g);
+    constant SizeBits_c  : positive := memSizeBits(AxiAddrWidth_g, AxiDataWidth_g);
     -- Data buffers of the master: two bursts of AxiMaxBeats_g words, in bytes
     constant FifoBytes_c : positive := 2 ** log2ceil(2 * AxiMaxBeats_g) * WordBytes_c;
 

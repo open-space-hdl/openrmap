@@ -259,6 +259,11 @@ begin
         report "omap_core: Target_g or Initiator_g must be true"
         severity failure;
 
+    -- CO-NO-03
+    assert coreConfigError(AxiDataWidth_g, BufferBytes_g, ChunkBytes_g) = ""
+        report "omap_core: " & coreConfigError(AxiDataWidth_g, BufferBytes_g, ChunkBytes_g)
+        severity failure;
+
     -- CO-1: packet demultiplexer
     i_demux : entity work.omap_core_demux
         generic map (
