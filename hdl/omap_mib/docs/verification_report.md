@@ -18,3 +18,4 @@ Findings:
 | Finding | Resolution |
 | --- | --- |
 | The register map generator named the base address of a register array and a register of the array alike (`RegWinBase_c`) | The array is named WINDOW (`RegWindowBase_c`, `RegWindowStride_c`) |
+| The register address of the AXI4-Lite slave, undefined until the first access, was converted in every cycle: numeric_std metavalue warnings in simulation | Converted only during an access (architecture D13); TC-CO-10 checks it at core level |

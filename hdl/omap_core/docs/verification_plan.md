@@ -15,7 +15,8 @@ models, the register files through AXI4-Lite.
 | `omap_core_tb` | `omap_core_th` | Two `omap_core` at 100 MHz: A with a 32-bit and B with a 64-bit memory interface, logical addresses 0x20 and 0x30, tick 100 ns, timeout 20 us, `Transactions_g` = 1; per core an AXI memory model, the AXI4-Lite VVC, AXI4-Stream VVCs on the request data, the reply data and both directions of the user port, a monitor of the confirmations and indications; per network direction a fault model (flip of one data character, EEP instead of a data character, packet dropped) and a capture VVC |
 
 VUnit configurations: `limited` (A Initiator only, B Target only) for TC-CO-05, `no_pass` (B without user port) for
-TC-CO-06, `transactions8` (`Transactions_g` = 8) for TC-CO-09. Simulator: GHDL.
+TC-CO-06, `transactions8` (`Transactions_g` = 8) for TC-CO-09, `ieee_warnings` (IEEE warnings enabled, post check of
+the simulator output) for TC-CO-10. Simulator: GHDL.
 
 ## 3. Test cases
 
@@ -30,6 +31,7 @@ TC-CO-06, `transactions8` (`Transactions_g` = 8) for TC-CO-09. Simulator: GHDL.
 | `test_mib` (TC-CO-07) | Single error injected into the write buffer of B through its register file: data corrected, SEC counted, interrupt; logical address, key and a read-only window configured through the register file and applied by the Target | CO-IF-03 |
 | `test_stress` (TC-CO-08) | Both Initiators with 16 writes and 16 reads each, eight user packets in each direction, memories with 30 % backpressure | CO-IF-01, CO-IF-02, CO-IF-03, CO-MX-01 |
 | `test_pipelined` (TC-CO-09) | Configuration `transactions8`: 24 writes and 24 reads of A with up to eight outstanding commands, memory of B with 30 % backpressure | CO-IF-03, CO-MX-01 |
+| `test_idle` (TC-CO-10) | Configuration `ieee_warnings`: after the reset the cores stay idle for 10 us; A is configured through its register file (identification, logical addresses, key, a window, timeout, interrupt enable, EDAC channel); both cores stay idle for 10 us; the first commands pass in both directions (writes with a partly filled last word, a verified write, reads, a read-modify-write) with a user packet in each direction; then B is configured. The post check fails on any numeric_std metavalue warning after the start marker and requires the warning of the testbench process `p_ieee_control` before it, which shows that the IEEE warnings are enabled. It accepts one exception: the two comparisons of `olo_axi_master_simple` in the memory master of the Target that evaluate registers Open Logic does not reset. The hardware is not affected; the exception is removed when the Open Logic version used by the core contains the fix | CO-IF-03 |
 
 ## 4. Requirement coverage
 
@@ -37,7 +39,7 @@ TC-CO-06, `transactions8` (`Transactions_g` = 8) for TC-CO-09. Simulator: GHDL.
 | --- | --- |
 | CO-IF-01 | TC-CO-01, TC-CO-08 |
 | CO-IF-02 | TC-CO-04, TC-CO-08 |
-| CO-IF-03 | TC-CO-02, TC-CO-03, TC-CO-07 to TC-CO-09 |
+| CO-IF-03 | TC-CO-02, TC-CO-03, TC-CO-07 to TC-CO-10 |
 | CO-DM-01 | TC-CO-01 to TC-CO-03, TC-CO-05 |
 | CO-DM-02 | TC-CO-04, TC-CO-06 |
 | CO-DM-03, CO-DM-04 | TC-CO-05 |

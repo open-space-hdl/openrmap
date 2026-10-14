@@ -27,7 +27,7 @@ Closure rules:
 
 ## 2. Result
 
-Run on 2026-10-07: 50 tests, all passed, 6 minutes. Numbers are covered/total bins per
+Run on 2026-10-14: 51 tests, all passed, 10 minutes. Numbers are covered/total bins per
 file; bold marks a metric with misses.
 
 | File | Statements | Branches | FSM States | FSM Transitions | Conditions | Expressions |
@@ -39,15 +39,15 @@ file; bold marks a metric with misses.
 | `omap_initiator/src/omap_initiator_rx.vhd` | 108/108 | 69/69 |  |  | **28/29** | 7/7 |
 | `omap_initiator/src/omap_initiator_tt.vhd` | 50/50 | 29/29 |  |  | **10/11** |  |
 | `omap_initiator/src/omap_initiator_tx.vhd` | 106/106 | 66/66 | 10/10 | 19/19 | 4/4 | 2/2 |
-| `omap_mib/src/omap_mib.vhd` | 185/185 | 95/95 |  |  | **18/19** |  |
+| `omap_mib/src/omap_mib.vhd` | 185/185 | 97/97 |  |  | **20/21** |  |
 | `omap_pkg/src/omap_pkg.vhd` | 13/13 | 6/6 |  |  | 2/2 |  |
 | `omap_target/src/omap_target.vhd` | 18/18 | 2/2 |  |  |  |  |
 | `omap_target/src/omap_target_auth.vhd` | 53/53 | 37/37 |  |  | 26/26 | 3/3 |
-| `omap_target/src/omap_target_ctrl.vhd` | 268/268 | 164/164 | 16/16 | 43/43 | **65/74** | **7/10** |
-| `omap_target/src/omap_target_mem.vhd` | 56/56 | 47/47 |  |  | **41/48** | **4/6** |
+| `omap_target/src/omap_target_ctrl.vhd` | 269/269 | 164/164 | 16/16 | 43/43 | **65/74** | **7/10** |
+| `omap_target/src/omap_target_mem.vhd` | 59/59 | 47/47 |  |  | **41/48** | **4/6** |
 | `omap_target/src/omap_target_rx.vhd` | 89/89 | **66/67** |  |  | **14/15** | 6/6 |
 | `omap_target/src/omap_target_tx.vhd` | 84/84 | 44/44 | 8/8 | 16/16 | 3/3 | 2/2 |
-| Total | 1239/1241 (99.8 %) | 732/735 (99.6 %) | 39/39 (100.0 %) | 86/86 (100.0 %) | 241/262 (92.0 %) | 44/51 (86.3 %) |
+| Total | 1243/1245 (99.8 %) | 734/737 (99.6 %) | 39/39 (100.0 %) | 86/86 (100.0 %) | 243/264 (92.0 %) | 44/51 (86.3 %) |
 
 ## 3. Gaps found and closed
 
@@ -71,7 +71,7 @@ The remaining condition and expression misses fall into three groups, none of th
   (`omap_target_ctrl.vhd` lines 706 and 707, `omap_target_mem.vhd` lines 259 and 260); a confirmation source keeps its
   valid signal until its handshake (`omap_initiator.vhd` lines 298 and 299); a lookup never relates a reply to an
   expired entry (`omap_initiator_tt.vhd` line 142); the channel of an injection command is never negative
-  (`omap_mib.vhd` line 281); the end of the packet is presented only when no data byte is pending (`omap_target_rx.vhd`
+  (`omap_mib.vhd` line 287); the end of the packet is presented only when no data byte is pending (`omap_target_rx.vhd`
   line 287).
 - Gaps of an input stream in the cycle of a particular character: a gap before the end marker of a discarded packet
   (`omap_core_demux.vhd` line 269, `omap_initiator_rx.vhd` line 294). The handshakes themselves are covered with gaps

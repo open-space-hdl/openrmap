@@ -718,6 +718,8 @@ begin
                 r.Drain     <= '0';
                 r.ErrClr    <= '0';
                 r.IndValid  <= '0';
+                -- The authorisation evaluates the header also while no command is executed
+                r.H <= CmdHeaderInit_c;
             end if;
         end if;
     end process;
