@@ -22,11 +22,11 @@ the clock constraint for AMD Vivado.
 | --- | --- | --- |
 | `Target_g`, `Initiator_g` | true | Node type: Target and Initiator, Target only or Initiator only (ECSS 5.7.1). At least one must be true |
 | `Passthrough_g` | true | User port for packets of other protocols; without it they are discarded and counted |
-| `AxiAddrWidth_g` | 32 | Address width of the memory interface (12 to 40). RMAP address bits above it must be zero |
-| `AxiDataWidth_g` | 32 | Data width of the memory interface (8 to 1024, power of 2); the memory word of single-address accesses |
+| `AxiAddrWidth_g` | 32 | Address width of the memory interface (12 to 40). RMAP address bits above it must be zero. An access longer than one command of the memory master, 2^(`AxiAddrWidth_g` - 2) - `AxiDataWidth_g`/8 bytes (2^(`AxiAddrWidth_g` - 1) - 1 at 8-bit data, at most 2^24 - `AxiDataWidth_g`/8), is split into several commands |
+| `AxiDataWidth_g` | 32 | Data width of the memory interface (8 to 1024, power of 2, checked at elaboration); the memory word of single-address accesses |
 | `AxiMaxBeats_g` | 16 | Maximum burst length of the memory interface (1 to 256); longer accesses are split into several bursts |
-| `BufferBytes_g` | 256 | Write buffer: maximum Data Length of a verified write |
-| `ChunkBytes_g` | 32 | Chunk of a non-verified write that is written to memory once it is complete in the buffer |
+| `BufferBytes_g` | 256 | Write buffer: maximum Data Length of a verified write; at least `ChunkBytes_g` |
+| `ChunkBytes_g` | 32 | Chunk of a non-verified write that is written to memory once it is complete in the buffer; a whole number of memory words (a single-address write moves whole words) and at most `BufferBytes_g`, both checked at elaboration. The chunk is at most one command of the memory master (`AxiAddrWidth_g`) |
 | `Windows_g` | 4 | Address windows of the Target (0 to 8) |
 | `ExtAuth_g` | false | External authorisation port |
 | `TgtAddrBytes_g` | 8 | Maximum length of the Target SpaceWire Address of a request (0 to 16) |
@@ -247,11 +247,12 @@ buffer or in the write data of the memory master is not kept out of memory, and 
 
 ## 9. Performance
 
-All numbers are cycles of `Clk`, measured in simulation by the test cases in the last column. Symbols: n the Data
-Length in bytes (n bytes read and modified for a read-modify-write), W = `AxiDataWidth_g`/8, B = `AxiMaxBeats_g`,
-C = `ChunkBytes_g`, P the bytes of the Target SpaceWire Address and R the bytes of the Reply Address (padded to whole
-words) of a request, L the memory latency: the cycles the memory adds to a slave that presents the first read beat in
-the cycle after the AR handshake and the write response in the cycle after the last W beat.
+All numbers are cycles of `Clk`, measured in simulation by the test cases in the last column. Symbols: n the Data Length
+in bytes (n bytes read and modified for a read-modify-write), W = `AxiDataWidth_g`/8, B = `AxiMaxBeats_g`, C the chunk
+(`ChunkBytes_g`, at most one command of the memory master, section 2), P the bytes of the Target SpaceWire Address and R
+the bytes of the Reply Address (padded to whole words) of a request, L the memory latency: the cycles the memory adds to
+a slave that presents the first read beat in the cycle after the AR handshake and the write response in the cycle after
+the last W beat.
 
 ### 9.1 Packet ports
 
@@ -309,7 +310,7 @@ memory, L = 0; TC-CO-11).
 python run.py -p 8                          # regression with GHDL
 python run.py --questa --coverage <test>    # code coverage with QuestaSim
 python lint/lint.py                         # VSG
-python lint/synth_check.py                  # synthesizability of three node types with GHDL
+python lint/synth_check.py                  # synthesizability at the generic values, GHDL
 python tools/compliance.py --check          # ECSS traceability
 python tools/regmap.py --check              # generated register map up to date
 python run.py --compile-order               # compile_order.txt of the synthesis sources
@@ -324,3 +325,5 @@ submodule `open-logic/` pins.
 | Defect | Affected | Correction |
 | --- | --- | --- |
 | Memory accesses of the Target with `AxiMaxBeats_g` smaller than `AxiDataWidth_g`/8 (32-bit bus with 1 to 3 beats, 64-bit bus with 1 to 7): every burst of an access longer than one burst used the address of the first burst. Reads returned the data of the first burst again; writes overwrote the words of the first burst, with an unaligned start also the bytes before the start address in its first word, and left the following addresses unwritten; read-modify-writes across a word boundary with one beat read and wrote the first word in place of the second. The reply reported success. The cause is the address increment of `olo_axi_master_simple` of Open Logic | Every version with Open Logic up to 4.7.0-ft.4; with 16 beats (the default) or any `AxiMaxBeats_g` of at least `AxiDataWidth_g`/8 not affected | Open Logic 4.7.0-ft.5; TC-TG-17 |
+| A non-verified single-address write never completed when `ChunkBytes_g` was not a whole number of memory words (with the default `ChunkBytes_g` of 32: `AxiDataWidth_g` 512 and 1024); the Target accepted no further command | Every earlier version | `ChunkBytes_g` must be a multiple of `AxiDataWidth_g`/8, checked at elaboration; TC-TG-02 at every data width |
+| `omap_core` with `AxiAddrWidth_g` 12 to 26 at 32-bit data (at other data widths correspondingly) or with `AxiDataWidth_g` 8 failed elaboration in `olo_axi_master_full` of Open Logic | Every version with Open Logic up to 4.7.0-ft.5 | Open Logic 4.7.0-ft.6; accesses longer than one command of the memory master are split; TC-TG-20 |

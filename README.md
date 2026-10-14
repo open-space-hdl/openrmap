@@ -15,7 +15,7 @@ buffers use the fault-tolerant entities of [Open Logic](https://github.com/open-
 hardware yet and has no flight heritage; see [what the levels mean](https://openspacehdl.org/trl/) and the next
 steps in the [roadmap](docs/roadmap.md#technology-readiness).
 
-The core is complete and verified in simulation (GHDL and QuestaSim, 50 test cases at unit and core level, statement,
+The core is complete and verified in simulation (GHDL and QuestaSim, 54 test cases at unit and core level, statement,
 branch and state machine coverage closed, see [docs/coverage.md](docs/coverage.md)); the
 [compliance matrix](docs/compliance.md) traces every ECSS clause in scope to its requirements and test cases. Two cores
 access each other's memory through a packet network model, pass packets of other protocols, report injected network
@@ -78,7 +78,7 @@ Checks besides the regression:
 
 ```shell
 python lint/lint.py                 # VSG, no errors and no warnings
-python lint/synth_check.py          # synthesizability of three node types with GHDL
+python lint/synth_check.py          # synthesizability at the generic values of the verification report
 python run.py --compile-order       # compile_order.txt; the CI fails when the file changes
 python tools/compliance.py --check  # every ECSS clause and requirement traced to a test case
 python tools/regmap.py --check      # generated register map files match hdl/omap_mib/regs/omap_regs.yml

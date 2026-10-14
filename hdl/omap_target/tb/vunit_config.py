@@ -15,6 +15,13 @@ def configure(lib):
         test = tb.test(name)
         test.add_config(name="axi32", generics={})
         test.add_config(name="axi64", generics={"AxiDataWidth_g": 64})
+    # Every memory word width; chunks are whole words (64 and 128 bytes at 512 and 1024 bits), and single-address
+    # writes of three 128-byte words need a larger verify buffer
+    for name in ("test_write_variants", "test_read_variants", "test_rmw"):
+        test = tb.test(name)
+        for width in (8, 16, 128, 256, 512, 1024):
+            test.add_config(name=f"axi{width}", generics={"AxiDataWidth_g": width, "BufferBytes_g": 512,
+                                                          "ChunkBytes_g": max(32, width // 8)})
     # Chunks larger than a third of the data buffer of the AXI master: the buffer applies backpressure
     tb.test("test_stress").add_config(name="chunk128", generics={"ChunkBytes_g": 128})
     tb.test("test_annex_patterns").add_config(name="windows4", generics={})
@@ -32,3 +39,12 @@ def configure(lib):
         tb.test("test_rate").add_config(name=name, generics=gen)
     for name, gen in (("axi32", {}), ("axi64", {"AxiDataWidth_g": 64}), ("c128", {"ChunkBytes_g": 128})):
         tb.test("test_timing").add_config(name=name, generics=gen)
+    # Address width at the ends of its range and in the middle (the default configurations: 32 bits)
+    # addr12_c2048: chunks longer than one command of the memory master (1020 bytes), so that the chunks are cut
+    for name, gen in (("addr12", {"AxiAddrWidth_g": 12}), ("addr12_axi8", {"AxiAddrWidth_g": 12, "AxiDataWidth_g": 8}),
+                      ("addr12_c2048", {"AxiAddrWidth_g": 12, "BufferBytes_g": 4096, "ChunkBytes_g": 2048}),
+                      ("addr40", {"AxiAddrWidth_g": 40})):
+        tb.test("test_addr_width").add_config(name=name, generics=gen)
+    # Every number of address windows
+    for windows in range(0, 9):
+        tb.test("test_windows").add_config(name=f"windows{windows}", generics={"Windows_g": windows})

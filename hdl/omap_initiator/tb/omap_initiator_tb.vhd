@@ -43,6 +43,7 @@ library work;
 entity omap_initiator_tb is
     generic (
         runner_cfg     : string;
+        TgtAddrBytes_g : natural := 8;
         Transactions_g : natural := 4
     );
 end entity;
@@ -97,7 +98,7 @@ begin
         begin
             R_v.Valid      := '1';
             R_v.Code       := cmd.Instr(5 downto 2);
-            R_v.TgtAddr    := cmd.Path(63 downto 0);
+            R_v.TgtAddr    := cmd.Path;
             R_v.TgtAddrLen := cmd.PathLen;
             R_v.Tla        := cmd.Tla;
             R_v.Key        := cmd.Key;
@@ -451,6 +452,64 @@ begin
                                 bytes(16 * n * n));
                 end loop;
 
+            elsif run("test_sizes") then
+                -- TC-IN-10: the longest Target SpaceWire Address with the longest Reply Address, and a full
+                -- transaction table: a further request with reply waits for a free entry
+                Cmd_v         := tbCmd(x"64", 16#100#, 4, 300);
+                Cmd_v.Path    := (others => '0');
+                Cmd_v.PathLen := TgtAddrBytes_g;
+
+                for i in 0 to TgtAddrBytes_g - 1 loop
+                    Cmd_v.Path(8 * i + 7 downto 8 * i) := std_logic_vector(to_unsigned(i + 1, 8));
+                end loop;
+
+                request(Cmd_v, tbBytes(12, 1), tbBytes(4), "longest addresses");
+                waitIdle;
+                Cnt_v := Obs.ConfCnt;
+                if Transactions_g > 0 then
+
+                    for i in 1 to Transactions_g loop
+                        request(tbCmd(x"4C", 16#100#, 4, 400 + i), tbBytes(0), tbBytes(0), "read " & to_string(i));
+                    end loop;
+
+                    await_completion(AXISTREAM_VVCT, VvcCmd_c, 1 ms, "commands of the full table");
+                    check_value(Obs.OpenCnt, Transactions_g, error, "table full");
+                    request(tbCmd(x"4C", 16#100#, 4, 400 + Transactions_g + 1), tbBytes(0), tbBytes(0),
+                            "read with a full table");
+                    wait for 2 us;
+                    check_value(Obs.CmdSentCnt, Transactions_g + 1, error, "no command while the table is full");
+
+                    for i in 1 to Transactions_g + 1 loop
+                        reply(rdRep(tbCmd(x"4C", 16#100#, 4, 400 + i), x"00", 4, tbBytes(4, i)));
+                        axistream_expect(AXISTREAM_VVCT, VvcRepData_c, tbBytes(4, i), "read data " & to_string(i));
+                        if i = 1 then
+                            await_completion(AXISTREAM_VVCT, VvcCmd_c, 1 ms, "command after a free entry");
+                        end if;
+                    end loop;
+
+                    waitIdle;
+                    wait for 200 ns;
+                    check_value(Obs.ConfCnt, Cnt_v + Transactions_g + 1, error, "every read confirmed");
+                    check_value(Obs.OpenCnt, 0, error, "table empty");
+                else
+
+                    -- Without table every request is sent at once
+                    for i in 1 to 3 loop
+                        request(tbCmd(x"4C", 16#100#, 4, 400 + i), tbBytes(0), tbBytes(0), "read " & to_string(i));
+                    end loop;
+
+                    await_completion(AXISTREAM_VVCT, VvcCmd_c, 1 ms, "commands without table");
+
+                    for i in 1 to 3 loop
+                        reply(rdRep(tbCmd(x"4C", 16#100#, 4, 400 + i), x"00", 4, tbBytes(4, i)));
+                        axistream_expect(AXISTREAM_VVCT, VvcRepData_c, tbBytes(4, i), "read data " & to_string(i));
+                    end loop;
+
+                    waitIdle;
+                    wait for 200 ns;
+                    check_value(Obs.ConfCnt, Cnt_v + 3, error, "every read confirmed");
+                end if;
+
             elsif run("test_reply_errors") then
                 -- TC-IN-03: corrupted replies
                 Cmd_v := tbCmd(x"4C", 16#100#, 4, 20);
@@ -735,6 +794,7 @@ begin
 
     i_th : entity work.omap_initiator_th
         generic map (
+            TgtAddrBytes_g => TgtAddrBytes_g,
             Transactions_g => Transactions_g
         )
         port map (

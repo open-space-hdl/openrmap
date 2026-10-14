@@ -203,6 +203,31 @@ begin
                 check_value(replyAddrBytes(x"6E"), 8, error, "RAL 2");
                 check_value(replyAddrBytes(x"7F"), 12, error, "RAL 3");
 
+            elsif run("test_config") then
+
+                -- TC-PKG-05: configuration check of omap_core and the command size of the memory master
+                for w in 3 to 10 loop
+                    check_value(coreConfigError(2 ** w, 256, maximum(32, 2 ** w / 8)), "", error,
+                                "data width " & to_string(2 ** w));
+                end loop;
+
+                check_value(coreConfigError(4, 256, 32) /= "", error, "data width 4 rejected");
+                check_value(coreConfigError(24, 256, 32) /= "", error, "data width 24 rejected");
+                check_value(coreConfigError(2048, 256, 32) /= "", error, "data width 2048 rejected");
+                check_value(coreConfigError(32, 64, 64), "", error, "chunk equal to the buffer");
+                check_value(coreConfigError(32, 64, 128) /= "", error, "chunk larger than the buffer rejected");
+                check_value(coreConfigError(512, 256, 64), "", error, "chunk of one 512-bit word");
+                check_value(coreConfigError(512, 256, 32) /= "", error, "chunk of half a word rejected");
+                check_value(coreConfigError(32, 256, 30) /= "", error, "chunk of 7.5 words rejected");
+                check_value(memSizeBits(12, 32), 10, error, "size bits, 12-bit address, 32-bit data");
+                check_value(memSizeBits(12, 8), 11, error, "size bits, 12-bit address, 8-bit data");
+                check_value(memSizeBits(26, 32), 24, error, "size bits, 26-bit address");
+                check_value(memSizeBits(40, 1024), 24, error, "size bits, 40-bit address");
+                check_value(memMaxCmd(12, 32), 1020, error, "largest command, 12-bit address, 32-bit data");
+                check_value(memMaxCmd(12, 8), 2047, error, "largest command, 12-bit address, 8-bit data");
+                check_value(memMaxCmd(12, 1024), 896, error, "largest command, 12-bit address, 1024-bit data");
+                check_value(memMaxCmd(32, 32), 2 ** 24 - 4, error, "largest command, 32-bit address");
+
             elsif run("test_model") then
                 -- TC-PKG-04: the RMAP model reproduces the patterns of ECSS Annex A.4
                 Cmd_v           := tbCmd(x"6C", 0, 16);

@@ -39,6 +39,7 @@ for packets of other protocols.
 | --- | --- | --- |
 | CO-NO-01 | The core shall implement a node that is Target and Initiator, Target only or Initiator only (`Target_g`, `Initiator_g`). | 5.7.1.1, 5.7.1.2a, 5.7.1.3a |
 | CO-NO-02 | The node type, the user port and the product characteristics fixed by generics shall be readable in the register file; the conformance statement and the product characteristics tables are in the user guide. | 5.8.1, 5.8.2 |
+| CO-NO-03 | The core shall stop the elaboration with a message for an `AxiDataWidth_g` other than a power of 2 from 8 to 1024, and for a `ChunkBytes_g` larger than `BufferBytes_g` or not a multiple of `AxiDataWidth_g`/8 (a single-address write moves whole memory words). | none (generic ranges) |
 
 ### 2.5 Performance
 

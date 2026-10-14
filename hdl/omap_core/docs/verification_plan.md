@@ -48,4 +48,5 @@ the simulator output) for TC-CO-10. Simulator: GHDL.
 | CO-MX-01 | TC-CO-01, TC-CO-02, TC-CO-04, TC-CO-08, TC-CO-09 |
 | CO-NO-01 | TC-CO-02, TC-CO-05 |
 | CO-NO-02 | TC-CO-05, TC-CO-06 |
+| CO-NO-03 | TC-PKG-05 |
 | CO-PF-01 | TC-CO-11 |

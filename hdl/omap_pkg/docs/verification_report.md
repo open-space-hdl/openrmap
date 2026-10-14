@@ -6,7 +6,7 @@ Run on 2026-10-07 with GHDL 6.0.0 (mcode), VUnit 5.0.0.dev7, UVVM 2026.03.20: `p
 
 | Testbench | Tests | Passed |
 | --- | --- | --- |
-| `omap_pkg_tb` | 4 | 4 |
+| `omap_pkg_tb` | 5 | 5 |
 
 ## 2. Summary
 

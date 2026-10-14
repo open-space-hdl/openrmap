@@ -54,6 +54,7 @@ an AXI4 master and sends the replies on a second N-Char stream. It executes one 
 | TG-EX-05 | A read-modify-write command shall be buffered and checked (Data CRC, length, end of packet) before it is authorised externally; it shall then read the n = Data Length / 2 bytes at the address, write (mask and data) or (not mask and read data) to the same bytes and return the bytes read. | 5.5.3.4.8 to 5.5.3.4.12, 5.5.3.4.14, 5.5.3.4.15, 5.5.3.6, 5.5.3.7 |
 | TG-EX-06 | An error response of the memory, or a double error in a data buffer, during a write or a read-modify-write shall give the status "general error code" (1); during a read the reply shall end with an EEP after the data. | 5.3.3.10, 5.4.3.10, 5.5.3.11 |
 | TG-EX-07 | A command of length zero shall access no memory and complete with status 0. | 5.3.1.12 note, 5.4.1.12 note |
+| TG-EX-08 | Every read and write that the address space and the windows allow shall be executed, also when it is longer than one command of the memory master: 2^(`AxiAddrWidth_g` - 2) - `AxiDataWidth_g`/8 bytes (2^(`AxiAddrWidth_g` - 1) - 1 at 8-bit data, at most 2^24 - `AxiDataWidth_g`/8). | 5.3.3.6, 5.4.3.6 |
 
 ### 2.5 Replies (TG-5)
 

@@ -6,7 +6,7 @@ Run on 2026-10-07 with GHDL 6.0.0 (mcode), VUnit 5.0.0.dev7, UVVM 2026.03.20: `p
 
 | Testbench | Tests | Passed |
 | --- | --- | --- |
-| `omap_initiator_tb` | 9 (TC-IN-06 in the configuration `no_table`) | 9 |
+| `omap_initiator_tb` | 13 (TC-IN-06 in the configuration `no_table`, TC-IN-10 in four) | 13 |
 
 ## 2. Summary
 

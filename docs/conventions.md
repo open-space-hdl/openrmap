@@ -30,7 +30,12 @@ document. This page lists the rules and the few OpenRMAP-specific additions.
   `vsg -c lint/config/vsg_config.yml -f <file>`. Safe automatic fixes:
   `vsg -c lint/config/vsg_config.yml --fix --fix_only lint/config/fix_only_config.yml -f <file>`.
 - The design must be synthesizable in a technology-independent way: `python lint/synth_check.py` elaborates
-  `omap_core` with the synthesis of GHDL (after `python run.py --compile`) and fails on errors and inferred latches.
+  `omap_core` with the synthesis of GHDL (after `python run.py --compile`) at the generic values of the verification
+  report of `omap_core` and fails on errors and inferred latches; inconsistent configurations must stop with the
+  message of the core. It runs in CI after the regression.
+- Generic ranges are verified: every value of a generic that changes the structure is simulated, the ends of every
+  numeric range are at least synthesised, other values are excluded by an assertion or listed as unverified; the
+  verification report of `omap_core` has the table.
   `to_01` and other simulation-only functions are not used in RTL.
 - The synthesis sources analyse with `ghdl -a --std=08` without `-frelaxed` and without warnings. Attribute
   specifications use literals, because the expression of an attribute specification must be locally static. Only

@@ -33,7 +33,7 @@ package omap_initiator_tb_pkg is
     type IniReq_t is record
         Valid        : std_logic;
         Code         : std_logic_vector(3 downto 0);
-        TgtAddr      : std_logic_vector(63 downto 0);
+        TgtAddr      : std_logic_vector(127 downto 0);
         TgtAddrLen   : natural;
         Tla          : std_logic_vector(7 downto 0);
         Key          : std_logic_vector(7 downto 0);
