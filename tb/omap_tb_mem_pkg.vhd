@@ -72,6 +72,14 @@ package omap_tb_mem_pkg is
 
         impure function getStall (idx : natural) return natural;
 
+        -- Additional cycles before the first read beat of a command and before a write response (0: one cycle after
+        -- the address or the last write beat)
+        procedure setLatency (
+            idx    : natural;
+            cycles : natural);
+
+        impure function getLatency (idx : natural) return natural;
+
         -- Statistics: bytes written (strobed), lowest and highest address written, read beats
         procedure clearStats (idx : natural);
 
@@ -111,6 +119,7 @@ package body omap_tb_mem_pkg is
         variable WrFirst_v : NatArray_t := (others => 1);
         variable WrLast_v  : NatArray_t := (others => 0);
         variable Stall_v   : NatArray_t := (others => 0);
+        variable Lat_v     : NatArray_t := (others => 0);
         variable WrCnt_v   : NatArray_t := (others => 0);
         variable WrLow_v   : NatArray_t := (others => natural'high);
         variable WrHigh_v  : NatArray_t := (others => 0);
@@ -195,6 +204,18 @@ package body omap_tb_mem_pkg is
         impure function getStall (idx : natural) return natural is
         begin
             return Stall_v(idx);
+        end function;
+
+        procedure setLatency (
+            idx    : natural;
+            cycles : natural) is
+        begin
+            Lat_v(idx) := cycles;
+        end procedure;
+
+        impure function getLatency (idx : natural) return natural is
+        begin
+            return Lat_v(idx);
         end function;
 
         procedure clearStats (idx : natural) is

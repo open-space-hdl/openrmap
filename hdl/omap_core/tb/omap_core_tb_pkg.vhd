@@ -63,6 +63,14 @@ package omap_core_tb_pkg is
         IndCnt    : natural;
         IndStatus : std_logic_vector(7 downto 0);
         Irq       : std_logic;
+        -- Clock cycle of the request handshake, of the first and the last character at M_Pkt and S_Pkt and of the
+        -- confirmation
+        ReqAcc    : natural;
+        TxFirst   : natural;
+        TxLast    : natural;
+        RxFirst   : natural;
+        RxLast    : natural;
+        ConfCyc   : natural;
     end record;
 
     type CoreObsArray_t is array (0 to 1) of CoreObs_t;

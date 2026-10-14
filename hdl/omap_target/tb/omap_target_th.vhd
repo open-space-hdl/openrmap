@@ -308,11 +308,39 @@ begin
                                              AuthLen     => (others => '0'),
                                              SecCnt      => 0,
                                             DedCnt      => 0,
-                                            RepValid    => '0'
+                                            RepValid    => '0',
+                                            CmdFirst    => 0,
+                                            CmdLast     => 0,
+                                            RepFirst    => 0,
+                                            RepLast     => 0
                                         );
         variable LastAuth_v : std_logic := '0';
+        variable Cyc_v      : natural   := 0;
+        variable CmdIn_v    : boolean   := false;
+        variable RepIn_v    : boolean   := false;
     begin
         if rising_edge(Clk_i) then
+            -- Cycle stamps of the packets at the ports of the Target
+            Cyc_v := Cyc_v + 1;
+            if CmdValid = '1' and CmdReady = '1' then
+                if not CmdIn_v then
+                    Obs_v.CmdFirst := Cyc_v;
+                end if;
+                CmdIn_v := CmdLast = '0';
+                if CmdLast = '1' then
+                    Obs_v.CmdLast := Cyc_v;
+                end if;
+            end if;
+            if RepValid = '1' and RepReady = '1' then
+                if not RepIn_v then
+                    Obs_v.RepFirst := Cyc_v;
+                end if;
+                RepIn_v := RepLast = '0';
+                if RepLast = '1' then
+                    Obs_v.RepLast := Cyc_v;
+                end if;
+            end if;
+
             if IndValid = '1' then
                 Obs_v.IndCnt     := Obs_v.IndCnt + 1;
                 Obs_v.IndTla     := IndTla;

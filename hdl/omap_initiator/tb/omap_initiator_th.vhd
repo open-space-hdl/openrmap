@@ -212,8 +212,60 @@ begin
     p_obs : process (Clk_i) is
         variable Obs_v  : IniObs_t;
         variable Init_v : boolean := true;
+        variable Cyc_v  : natural := 0;
+        variable DIn_v  : boolean := false;
+        variable CIn_v  : boolean := false;
+        variable RIn_v  : boolean := false;
+        variable RdIn_v : boolean := false;
+        variable DCnt_v : natural := 0;
     begin
         if rising_edge(Clk_i) then
+            -- Cycle stamps of the request, the streams and the confirmation
+            Cyc_v := Cyc_v + 1;
+            if Req.Valid = '1' and ReqReady_i = '1' then
+                Obs_v.ReqAcc := Cyc_v;
+            end if;
+            if DataValid = '1' and DataReady = '1' then
+                if not DIn_v then
+                    Obs_v.DataFirst := Cyc_v;
+                end if;
+                DIn_v          := true;
+                Obs_v.DataLast := Cyc_v;
+            end if;
+            if Req.Valid = '1' and ReqReady_i = '1' then
+                DIn_v := false;
+            end if;
+            if CmdValid = '1' and CmdReady = '1' then
+                if not CIn_v then
+                    Obs_v.CmdFirst := Cyc_v;
+                end if;
+                CIn_v := CmdLast = '0';
+                if CmdLast = '1' then
+                    Obs_v.CmdLast := Cyc_v;
+                end if;
+            end if;
+            if RepValid = '1' and RepReady = '1' then
+                if not RIn_v then
+                    Obs_v.RepFirst := Cyc_v;
+                end if;
+                RIn_v := RepLast = '0';
+                if RepLast = '1' then
+                    Obs_v.RepLast := Cyc_v;
+                end if;
+            end if;
+            if RepDataValid = '1' and RepDataReady = '1' then
+                if not RdIn_v then
+                    Obs_v.RdFirst := Cyc_v;
+                end if;
+                RdIn_v := RepDataLast = '0';
+                if RepDataLast = '1' then
+                    Obs_v.RdLast := Cyc_v;
+                end if;
+            end if;
+            if ConfValid = '1' and Cfg.ConfReady = '1' then
+                Obs_v.ConfCyc := Cyc_v;
+            end if;
+
             if Init_v then
                 Obs_v.ConfCnt    := 0;
                 Obs_v.CmdSentCnt := 0;

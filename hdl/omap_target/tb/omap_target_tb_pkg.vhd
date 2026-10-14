@@ -88,6 +88,11 @@ package omap_target_tb_pkg is
         SecCnt      : natural;
         DedCnt      : natural;
         RepValid    : std_logic;
+        -- Clock cycle of the first and the last character of the latest command and reply packet
+        CmdFirst    : natural;
+        CmdLast     : natural;
+        RepFirst    : natural;
+        RepLast     : natural;
     end record;
 
     -- Enabled window with permissions (read, write, verified-only, read-modify-write, single address)

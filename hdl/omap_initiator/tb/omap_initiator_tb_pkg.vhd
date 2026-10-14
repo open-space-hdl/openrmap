@@ -102,6 +102,18 @@ package omap_initiator_tb_pkg is
         TidBusyCnt : natural;
         OpenCnt    : natural;
         ConfValid  : std_logic;
+        -- Clock cycle of the request handshake, of the first and the last beat of the request data, the command, the
+        -- reply and the read data and of the confirmation handshake
+        ReqAcc     : natural;
+        DataFirst  : natural;
+        DataLast   : natural;
+        CmdFirst   : natural;
+        CmdLast    : natural;
+        RepFirst   : natural;
+        RepLast    : natural;
+        RdFirst    : natural;
+        RdLast     : natural;
+        ConfCyc    : natural;
     end record;
 
 end package;
