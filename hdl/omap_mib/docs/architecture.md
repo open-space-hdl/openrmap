@@ -45,7 +45,7 @@ to ECC_COUNT is the read and clear of the selected channel, a write to ECC_STATU
 | 2 | Read data of the AXI master (`olo_ft_axi_master_full`) |
 
 A write to ECC_INJECT with SINGLE or DOUBLE set gives a one-cycle pulse on `Inj_Valid` of the channel with
-`Inj_Double`; the Target flips codeword bit 3 (single) or bits 3 and 5 (double) of the next word written to the
+`Inj_Double`; the Target flips codeword bit 3 (single) or bits 3 and 5 (double) of the next byte written to the
 buffer. Channel 3 does not exist: its counters read zero and an injection into it is ignored.
 
 ## 4. Resources and timing

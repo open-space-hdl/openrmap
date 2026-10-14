@@ -128,14 +128,15 @@ TMR for all other logic:
 | State machines | Recovery state through the `when others` branch and the reset; a command of the Initiator whose reply is lost ends with the reply timeout (INI_TIMEOUT, with `Transactions_g` > 0) | none |
 | All other logic: registers of the control and data paths, counters, pointers, pipeline registers, the transaction table of the Initiator and the register file | TMR of the synthesis tool (for example `syn_radhardlevel` = `tmr` with Synplify, or the equivalent setting of the tool chain). The core adds no protection of its own for this logic; without TMR, an upset in it is not covered | synthesis report |
 
-A double error is never passed on as valid data. In a write the word with the double error is written to memory with
-the other data of the command, and the reply and the indication carry status 1, so the Initiator knows that the
-addressed memory holds undefined data and can repeat the write. This applies to verified writes as well: the Data CRC is
-checked as the data enters the write buffer, so a double error that arises in the buffer afterwards is reported, not
-prevented. A read-modify-write with a double error ends with status 1; after a double error in the read data nothing
-is written. In a read reply the data is followed by an EEP instead of the Data CRC and the EOP (ECSS 5.4.3.10c.1), so
-the Initiator recognises the data as invalid. ECC_INJECT writes a single or a double error into the next word written
-to a buffer for tests of the software.
+A double error is never passed on as valid data. The buffers hold one byte per ECC word, so ECC_COUNT counts corrected
+and detected bytes. In a write the byte with the double error is written to memory with the other data of the
+command, and the reply and the indication carry status 1, so the Initiator knows that the addressed memory holds
+undefined data and can repeat the write. This applies to verified writes as well: the Data CRC is checked as the data
+enters the write buffer, so a double error that arises in the buffer afterwards is reported, not prevented. A
+read-modify-write with a double error ends with status 1; after a double error in the read data nothing is written.
+In a read reply the data is followed by an EEP instead of the Data CRC and the EOP (ECSS 5.4.3.10c.1), so the
+Initiator recognises the data as invalid. ECC_INJECT writes a single or a double error into the next byte written to a
+buffer for tests of the software.
 
 The integrator:
 

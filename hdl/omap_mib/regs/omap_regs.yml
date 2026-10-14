@@ -241,14 +241,14 @@ registers:
 
   - name: ECC_COUNT
     offset: 0x0A8
-    description: SEC and DED counters of the selected channel
+    description: SEC and DED counters of the selected channel in bytes (every buffer holds one byte per ECC word)
     fields:
       - {name: DED, bits: "31:16", access: RC, reset: 0, description: Double errors detected}
       - {name: SEC, bits: "15:0", access: RC, reset: 0, description: Single errors corrected; any write clears the selected channel}
 
   - name: ECC_INJECT
     offset: 0x0AC
-    description: Error injection into the next word written to a buffer (tests)
+    description: Error injection into the next byte written to a buffer (tests)
     fields:
       - {name: DOUBLE, bits: "9", access: W1, reset: 0, description: Inject a double error}
       - {name: SINGLE, bits: "8", access: W1, reset: 0, description: Inject a single error}

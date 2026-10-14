@@ -45,7 +45,8 @@ entity omap_target_tb is
         runner_cfg     : string;
         AxiDataWidth_g : positive := 32;
         Windows_g      : natural  := 4;
-        ExtAuth_g      : boolean  := false
+        ExtAuth_g      : boolean  := false;
+        ChunkBytes_g   : positive := 32
     );
 end entity;
 
@@ -966,7 +967,8 @@ begin
         generic map (
             AxiDataWidth_g => AxiDataWidth_g,
             Windows_g      => Windows_g,
-            ExtAuth_g      => ExtAuth_g
+            ExtAuth_g      => ExtAuth_g,
+            ChunkBytes_g   => ChunkBytes_g
         )
         port map (
             Clk => Clk,

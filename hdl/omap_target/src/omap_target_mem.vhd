@@ -7,11 +7,10 @@
 -- Description
 ---------------------------------------------------------------------------------------------------
 -- Memory access of the RMAP Target (TG-4): executes write and read commands of any byte address
--- and length on the AXI4 master olo_ft_axi_master_full. A single-address command is split into one
--- AXI command per memory word, all at the same address. Busy covers the commands not yet completed
--- on AXI; Err is set by an AXI error response or a double error in a data buffer of the master and
--- stays set until ErrClr. The bytes of a command are packed into AXI words (first byte in the least
--- significant byte) here and the master runs with the AXI data width on its user side.
+-- and length on the AXI4 master olo_ft_axi_master_full, which takes and returns the data as bytes.
+-- A single-address command is split into one AXI command per memory word, all at the same address.
+-- Busy covers the commands not yet completed on AXI; Err is set by an AXI error response or a double
+-- error in a data buffer of the master and stays set until ErrClr.
 --
 -- Documentation: hdl/omap_target/docs/architecture.md
 
@@ -61,10 +60,10 @@ entity omap_target_mem is
         Ecc_WrDed     : out   std_logic;
         Ecc_RdSec     : out   std_logic;
         Ecc_RdDed     : out   std_logic;
-        WrInj_BitFlip : in    std_logic_vector(eccCodewordWidth(AxiDataWidth_g) - 1 downto 0)     := (others => '0');
-        WrInj_Valid   : in    std_logic                                                           := '0';
-        RdInj_BitFlip : in    std_logic_vector(eccCodewordWidth(AxiDataWidth_g + 1) - 1 downto 0) := (others => '0');
-        RdInj_Valid   : in    std_logic                                                           := '0';
+        WrInj_BitFlip : in    std_logic_vector(eccCodewordWidth(8) - 1 downto 0) := (others => '0');
+        WrInj_Valid   : in    std_logic                                          := '0';
+        RdInj_BitFlip : in    std_logic_vector(eccCodewordWidth(9) - 1 downto 0) := (others => '0');
+        RdInj_Valid   : in    std_logic                                          := '0';
         -- AXI4 master
         M_Axi_AwAddr  : out   std_logic_vector(AxiAddrWidth_g - 1 downto 0);
         M_Axi_AwLen   : out   std_logic_vector(7 downto 0);
@@ -107,26 +106,19 @@ architecture rtl of omap_target_mem is
 
     constant WordBytes_c : positive := AxiDataWidth_g / 8;
     constant SizeBits_c  : positive := minimum(24, AxiAddrWidth_g);
-    -- Data buffers of the master: two bursts of AxiMaxBeats_g words
-    constant FifoWords_c : positive := 2 ** log2ceil(2 * AxiMaxBeats_g);
+    -- Data buffers of the master: two bursts of AxiMaxBeats_g words, in bytes
+    constant FifoBytes_c : positive := 2 ** log2ceil(2 * AxiMaxBeats_g) * WordBytes_c;
 
     type Fsm_t is (Idle_s, Issue_s);
 
     type TwoProcess_r is record
-        Fsm      : Fsm_t;
-        Write    : std_logic;
-        Addr     : std_logic_vector(AxiAddrWidth_g - 1 downto 0);
-        Size     : std_logic_vector(23 downto 0);
-        Words    : unsigned(23 downto 0); -- Remaining AXI commands of a single-address command
-        OpenCnt  : natural range 0 to 1023;
-        Err      : std_logic;
-        -- Packing of the write bytes, unpacking of the read words
-        WrRemain : unsigned(23 downto 0);
-        WrWord   : std_logic_vector(AxiDataWidth_g - 1 downto 0);
-        WrIdx    : natural range 0 to AxiDataWidth_g / 8;
-        WrValid  : std_logic;
-        RdRemain : unsigned(23 downto 0);
-        RdIdx    : natural range 0 to AxiDataWidth_g / 8 - 1;
+        Fsm     : Fsm_t;
+        Write   : std_logic;
+        Addr    : std_logic_vector(AxiAddrWidth_g - 1 downto 0);
+        Size    : std_logic_vector(23 downto 0);
+        Words   : unsigned(23 downto 0); -- Remaining AXI commands of a single-address command
+        OpenCnt : natural range 0 to 1023;
+        Err     : std_logic;
     end record;
 
     signal r, r_next : TwoProcess_r;
@@ -144,10 +136,6 @@ architecture rtl of omap_target_mem is
     signal RdEccDed   : std_logic;
     signal WrEccDed   : std_logic;
     signal RdEccSec   : std_logic;
-    signal MWrReady   : std_logic;
-    signal MRdData    : std_logic_vector(AxiDataWidth_g - 1 downto 0);
-    signal MRdReady   : std_logic;
-    signal RReady_i   : std_logic;
 
 begin
 
@@ -171,15 +159,8 @@ begin
             end if;
         end if;
 
-        if r.Fsm = Idle_s and Cmd_Valid = '1' and r.WrRemain = 0 and r.RdRemain = 0 then
-            v.Fsm := Issue_s;
-            if Cmd_Write = '1' then
-                v.WrRemain := unsigned(Cmd_Size);
-                v.WrIdx    := 0;
-            else
-                v.RdRemain := unsigned(Cmd_Size);
-                v.RdIdx    := 0;
-            end if;
+        if r.Fsm = Idle_s and Cmd_Valid = '1' then
+            v.Fsm   := Issue_s;
             v.Write := Cmd_Write;
             v.Addr  := Cmd_Addr;
             if Cmd_Single = '1' then
@@ -204,77 +185,40 @@ begin
         end if;
         v.OpenCnt := maximum(0, minimum(1023, Open_v));
 
-        -- ECSS 5.3.3.10, 5.4.3.10: memory errors. The response of every read beat is checked here, because the
-        -- master reports only the response of the last beat of a burst.
+        -- ECSS 5.3.3.10, 5.4.3.10: memory errors (the master reports an error response of any beat of a command)
         if ErrClr = '1' then
             v.Err := '0';
         end if;
-        if WrError = '1' or RdError = '1' or WrEccDed = '1' or (RdEccDed = '1' and RdValid_i = '1' and MRdReady = '1') or
-           (M_Axi_RValid = '1' and RReady_i = '1' and M_Axi_RResp(1) = '1') then
+        if WrError = '1' or RdError = '1' or WrEccDed = '1' or (RdEccDed = '1' and RdValid_i = '1' and Rd_Ready = '1') then
             v.Err := '1';
         end if;
 
         CmdWrValid <= '1' when r.Fsm = Issue_s and r.Write = '1' else '0';
         CmdRdValid <= '1' when r.Fsm = Issue_s and r.Write = '0' else '0';
-        Cmd_Ready  <= '1' when r.Fsm = Idle_s and r.WrRemain = 0 and r.RdRemain = 0 else '0';
-
-        -- Write bytes packed into words: a word is complete after its last byte or the last byte of the command
-        if r.WrValid = '1' and MWrReady = '1' then
-            v.WrValid := '0';
-        end if;
-        Wr_Ready <= '1' when r.WrRemain /= 0 and (r.WrValid = '0' or MWrReady = '1') else '0';
-        if Wr_Valid = '1' and r.WrRemain /= 0 and (r.WrValid = '0' or MWrReady = '1') then
-            v.WrWord(8 * r.WrIdx + 7 downto 8 * r.WrIdx) := Wr_Data;
-            v.WrRemain                                   := r.WrRemain - 1;
-            if r.WrIdx = WordBytes_c - 1 or r.WrRemain = 1 then
-                v.WrValid := '1';
-                v.WrIdx   := 0;
-            else
-                v.WrIdx := r.WrIdx + 1;
-            end if;
-        end if;
-
-        -- Read words unpacked into bytes: the last word of a command holds the remaining bytes
-        Rd_Valid <= RdValid_i when r.RdRemain /= 0 else '0';
-        Rd_Data  <= MRdData(8 * r.RdIdx + 7 downto 8 * r.RdIdx);
-        MRdReady <= '0';
-        if RdValid_i = '1' and r.RdRemain /= 0 and Rd_Ready = '1' then
-            v.RdRemain := r.RdRemain - 1;
-            if r.RdIdx = WordBytes_c - 1 or r.RdRemain = 1 then
-                MRdReady <= '1';
-                v.RdIdx  := 0;
-            else
-                v.RdIdx := r.RdIdx + 1;
-            end if;
-        end if;
+        Cmd_Ready  <= '1' when r.Fsm = Idle_s else '0';
 
         r_next <= v;
     end process;
 
-    CmdSize      <= r.Size(SizeBits_c - 1 downto 0);
-    Busy         <= '1' when r.Fsm /= Idle_s or r.OpenCnt /= 0 or r.WrRemain /= 0 or r.WrValid = '1' else '0';
-    Err          <= r.Err;
-    Ecc_WrDed    <= WrEccDed;
-    M_Axi_RReady <= RReady_i;
-    Ecc_RdSec    <= RdEccSec and RdValid_i and MRdReady;
-    Ecc_RdDed    <= RdEccDed and RdValid_i and MRdReady;
+    CmdSize   <= r.Size(SizeBits_c - 1 downto 0);
+    Busy      <= '1' when r.Fsm /= Idle_s or r.OpenCnt /= 0 else '0';
+    Err       <= r.Err;
+    Ecc_WrDed <= WrEccDed;
+    Rd_Valid  <= RdValid_i;
+    Ecc_RdSec <= RdEccSec and RdValid_i and Rd_Ready;
+    Ecc_RdDed <= RdEccDed and RdValid_i and Rd_Ready;
 
     p_seq : process (Clk) is
     begin
         if rising_edge(Clk) then
             r <= r_next;
             if Rst = '1' then
-                r.Fsm      <= Idle_s;
-                r.OpenCnt  <= 0;
-                r.Err      <= '0';
-                r.WrRemain <= (others => '0');
-                r.WrValid  <= '0';
-                r.RdRemain <= (others => '0');
-                -- Address and size enter the arithmetic of the master also while it is idle; the unused byte lanes
-                -- of a partly filled last word are written to the ECC buffer of the master
-                r.Addr   <= (others => '0');
-                r.Size   <= (others => '0');
-                r.WrWord <= (others => '0');
+                r.Fsm     <= Idle_s;
+                r.OpenCnt <= 0;
+                r.Err     <= '0';
+                -- Address and size enter the arithmetic of the master also while it is idle
+                r.Addr <= (others => '0');
+                r.Size <= (others => '0');
             end if;
         end if;
     end process;
@@ -286,8 +230,8 @@ begin
             AxiMaxBeats_g             => AxiMaxBeats_g,
             AxiMaxOpenTransactions_g  => 4,
             UserTransactionSizeBits_g => SizeBits_c,
-            DataFifoDepth_g           => FifoWords_c,
-            UserDataWidth_g           => AxiDataWidth_g
+            DataFifoDepth_g           => FifoBytes_c,
+            UserDataWidth_g           => 8
         )
         port map (
             Clk               => Clk,
@@ -300,15 +244,15 @@ begin
             CmdRd_Size        => CmdSize,
             CmdRd_Valid       => CmdRdValid,
             CmdRd_Ready       => CmdRdReady,
-            Wr_Data           => r.WrWord,
-            Wr_Valid          => r.WrValid,
-            Wr_Ready          => MWrReady,
+            Wr_Data           => Wr_Data,
+            Wr_Valid          => Wr_Valid,
+            Wr_Ready          => Wr_Ready,
             Wr_EccSec         => Ecc_WrSec,
             Wr_EccDed         => WrEccDed,
-            Rd_Data           => MRdData,
+            Rd_Data           => Rd_Data,
             Rd_Last           => open,
             Rd_Valid          => RdValid_i,
-            Rd_Ready          => MRdReady,
+            Rd_Ready          => Rd_Ready,
             Rd_EccSec         => RdEccSec,
             Rd_EccDed         => RdEccDed,
             Wr_Done           => WrDone,
@@ -349,7 +293,7 @@ begin
             M_Axi_RResp       => M_Axi_RResp,
             M_Axi_RLast       => M_Axi_RLast,
             M_Axi_RValid      => M_Axi_RValid,
-            M_Axi_RReady      => RReady_i
+            M_Axi_RReady      => M_Axi_RReady
         );
 
 end architecture;

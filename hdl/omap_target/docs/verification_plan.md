@@ -13,9 +13,10 @@ backdoor of the AXI memory model. The CRC test patterns of ECSS Annex A.4 are pa
 | `omap_target_tb` | `omap_target_th` | `omap_target` at 100 MHz (AXI address width 32, `BufferBytes_g` 256, `ChunkBytes_g` 32), AXI4-Stream VVCs on the command and reply streams, AXI memory model instance 0, a responder on the external authorisation port, monitors of the indications and events |
 
 VUnit configurations: `windows4` and `windows0` (four and no address windows) for TC-TG-01; `axi32` and `axi64`
-(AXI data width 32 and 64, memory word of 4 and 8 bytes) for TC-TG-02, 03, 04 and 14; `ext_auth` (`ExtAuth_g`) for
-TC-TG-12 and TC-TG-16, `int_auth` for TC-TG-16. All other tests run with four windows, a 32-bit AXI bus and no
-external authorisation. Simulator: GHDL.
+(AXI data width 32 and 64, memory word of 4 and 8 bytes) for TC-TG-02, 03, 04 and 14; `chunk128` (`ChunkBytes_g`
+128, so that the data buffer of the AXI master fills and applies backpressure) for TC-TG-14; `ext_auth`
+(`ExtAuth_g`) for TC-TG-12 and TC-TG-16, `int_auth` for TC-TG-16. All other tests run with four windows, a 32-bit
+AXI bus and no external authorisation. Simulator: GHDL.
 
 ## 3. Test cases
 

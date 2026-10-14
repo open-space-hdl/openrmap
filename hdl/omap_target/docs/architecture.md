@@ -87,15 +87,15 @@ status 7, both without reply.
 
 ## 5. Memory access (TG-4, `omap_target_mem`)
 
-`olo_ft_axi_master_full` executes commands of any byte address and length; its user side runs with the AXI data width.
-The block packs the write bytes of a command into words (first byte in the least significant byte, the last word of
-a command partly filled) and unpacks the read words into bytes. A single-address command is split into one AXI command
-of one memory word per word of data, all at the same address. `Busy` covers commands not yet issued or completed on
-AXI and bytes not yet packed. `Err` is set by an error response of a write, by the response of every read beat (the
-master itself reports only the response of the last beat of a burst), and by a double error in a data buffer of the
-master; the controller clears it at the start of every command.
+`olo_ft_axi_master_full` executes commands of any byte address and length. Its user side is 8 bits wide: the master
+places the write bytes of a command in their byte lanes of the AXI words and returns the read data as bytes. A
+single-address command is split into one AXI command of one memory word per word of data, all at the same address.
+`Busy` covers commands not yet issued or completed on AXI. `Err` is set by an error response on any write response or
+read beat of a command, which the master reports at the end of the command, and by a double error in a data buffer of
+the master; the controller clears it at the start of every command.
 
-The master runs in its high-latency mode with data buffers of two bursts of `AxiMaxBeats_g` words.
+The master runs in its high-latency mode with data buffers of two bursts of `AxiMaxBeats_g` words; the buffers hold
+one byte per ECC word.
 
 ## 6. Reply encoder (TG-5, `omap_target_tx`)
 

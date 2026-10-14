@@ -35,7 +35,7 @@ injection (MG-2). The register map is generated from `regs/omap_regs.yml` by `to
 | ID | Requirement | ECSS |
 | --- | --- | --- |
 | MG-ED-01 | The SEC and DED events of the three FT buffers of the Target (write buffer, write data and read data of the AXI master) shall be counted per channel with a DED sticky flag per channel, a read and clear per channel and a global clear; they shall also set the ECC event flags. | none (P5) |
-| MG-ED-02 | A command shall inject a single or a double error into the next word written to the selected buffer. | none (P5) |
+| MG-ED-02 | A command shall inject a single or a double error into the next byte written to the selected buffer. | none (P5) |
 
 ## 3. Configuration parameters
 

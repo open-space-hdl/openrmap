@@ -49,8 +49,8 @@ The ID register reads 0x4F4D4101.
 | 0x098 | [IRQ_STATUS](#irq_status) | Interrupt output |
 | 0x0A0 | [ECC_STATUS](#ecc_status) | EDAC status of the buffers |
 | 0x0A4 | [ECC_SELECT](#ecc_select) | Channel shown in ECC_COUNT |
-| 0x0A8 | [ECC_COUNT](#ecc_count) | SEC and DED counters of the selected channel |
-| 0x0AC | [ECC_INJECT](#ecc_inject) | Error injection into the next word written to a buffer (tests) |
+| 0x0A8 | [ECC_COUNT](#ecc_count) | SEC and DED counters of the selected channel in bytes (every buffer holds one byte per ECC word) |
+| 0x0AC | [ECC_INJECT](#ecc_inject) | Error injection into the next byte written to a buffer (tests) |
 | 0x100 + 0x10 n | [WIN_CTRL](#win_ctrl) | Enable and permissions of window n, high bytes of the 40-bit bounds |
 | 0x104 + 0x10 n | [WIN_BASE](#win_base) | First address of window n, bits 31 to 0 |
 | 0x108 + 0x10 n | [WIN_LAST](#win_last) | Last address of window n (inclusive), bits 31 to 0 |
@@ -340,7 +340,7 @@ Address 0x0A4: Channel shown in ECC_COUNT.
 
 ### ECC_COUNT
 
-Address 0x0A8: SEC and DED counters of the selected channel.
+Address 0x0A8: SEC and DED counters of the selected channel in bytes (every buffer holds one byte per ECC word).
 
 | Bits | Field | Access | Reset | Description |
 | --- | --- | --- | --- | --- |
@@ -349,7 +349,7 @@ Address 0x0A8: SEC and DED counters of the selected channel.
 
 ### ECC_INJECT
 
-Address 0x0AC: Error injection into the next word written to a buffer (tests).
+Address 0x0AC: Error injection into the next byte written to a buffer (tests).
 
 | Bits | Field | Access | Reset | Description |
 | --- | --- | --- | --- | --- |
