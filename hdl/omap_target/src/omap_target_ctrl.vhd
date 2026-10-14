@@ -239,10 +239,11 @@ begin
             end if;
         end if;
 
-        -- Write data from the buffer to the memory (Pump bytes committed), or discarded (Drain)
+        -- Write data from the buffer to the memory (Pump bytes committed), or discarded (Drain); a command can be
+        -- accepted in the same cycle
         PumpOk_v := r.Pump /= 0 and FifoOut_Valid = '1' and MemWr_Ready = '1' and r.Fsm = WrData_s;
         if PumpOk_v then
-            v.Pump := r.Pump - 1;
+            v.Pump := v.Pump - 1;
         end if;
         -- A double error in a word written to memory gives status 1; a discarded word belongs to a command with an
         -- error status already
