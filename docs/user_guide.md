@@ -245,7 +245,65 @@ buffer or in the write data of the memory master is not kept out of memory, and 
 | Accepted address ranges | The enabled windows with read-modify-write permission, within `AxiAddrWidth_g` |
 | Status codes returned | 1 to 7, 10 to 12 |
 
-## 9. Verification and tools
+## 9. Performance
+
+All numbers are cycles of `Clk`, measured in simulation by the test cases in the last column. Symbols: n the Data
+Length in bytes (n bytes read and modified for a read-modify-write), W = `AxiDataWidth_g`/8, B = `AxiMaxBeats_g`,
+C = `ChunkBytes_g`, P the bytes of the Target SpaceWire Address and R the bytes of the Reply Address (padded to whole
+words) of a request, L the memory latency: the cycles the memory adds to a slave that presents the first read beat in
+the cycle after the AR handshake and the write response in the cycle after the last W beat.
+
+### 9.1 Packet ports
+
+The packet ports and the user port carry one character per cycle. A received packet costs up to four further cycles
+in the demultiplexer (three characters of lookahead and a decision cycle), a sent packet one idle cycle at its start
+in the multiplexer.
+
+| Packet | Cycles | Test |
+| --- | --- | --- |
+| Command at the Target: write of n + 18 characters (without Reply Address), read of 17, read-modify-write of 2n + 18 | n + 22, 21, 2n + 22 at the Target; up to five more at the packet input of the core | TC-TG-19, TC-CO-11 |
+| Command of the Initiator: write of n + P + R + 18 characters, read of 17 (without addresses) | the last character n + P + R + 22 and 20 cycles after the request; the first after 4 cycles (3 with a Target SpaceWire Address) | TC-IN-09 |
+| Reply at the Initiator: write reply of 9 characters, read reply of n + 14 | 10 and n + 15 at the Initiator, 14 for a write reply at the packet input of the core | TC-IN-09, TC-CO-11 |
+
+The Target takes the end of a command only after the reply to the previous command has been sent (architecture of
+`omap_core`, section 4). The Initiator takes the next request with the end of packet marker of a command: writes
+without reply follow every n + 22 cycles (TC-IN-09).
+
+### 9.2 Memory rates of the Target
+
+The memory master packs one byte per cycle, its read buffer holds two bursts, a chunk of a non-verified write costs
+nine cycles in addition to its bytes, and at most four write transactions are open.
+
+| Access | Bytes per cycle | With the defaults (W 4, B 16, C 32) | Test |
+| --- | --- | --- | --- |
+| Read | min(1, 2WB / (L + 7 + W (B - 1))) | 1 up to L = 61, 0.871 at L = 80 | TC-TG-18 |
+| Non-verified write | min(C / (C + 9), 4WB / (L + 5 + B), WB / 5.5) | 0.780 up to L = 80 (C 128: 0.934) | TC-TG-18 |
+
+Short bursts reduce the rates at a high latency: with B = 1 at 32 bit a read reaches 0.170 and a write 0.348 bytes
+per cycle at L = 40. A non-verified write is taken at one character per cycle while the bytes not yet written fit into
+the write buffer (`BufferBytes_g`); a longer write is taken at the write rate. A verified write writes its data only
+after the Data CRC is checked, so its memory write follows its reception.
+
+### 9.3 Command timing of the Target
+
+| Command | Cycles | Test |
+| --- | --- | --- |
+| Read: end of the command to the first reply character | 5 | TC-TG-19 |
+| Read reply of n + 14 characters | n + 17 + W + L at a read rate of 1 | TC-TG-19 |
+| Non-verified write of n bytes, n up to C and WB, aligned: end of the command to the reply | n + ceil(n / W) + 19 + L | TC-TG-19 |
+| Read-modify-write: end of the command to the reply; reply of n + 14 characters | 2n + 38 + W + 2L; n + 16 | TC-TG-19 |
+| Reads back to back | n + 23 + W + L per command | TC-TG-19, TC-CO-11 |
+| Non-verified writes of n = kC bytes (k >= 2) back to back | at most n (C + 9) / C + C + 29 + L per command (C 32, n 256: 381 at L = 0) | TC-TG-19, TC-CO-11 |
+| Read-modify-writes of 4 bytes back to back | 76 + W + 2L per command | TC-TG-19 |
+
+### 9.4 Initiator
+
+The read data of a reply leaves at one byte per cycle, the last byte 3 cycles after the end of packet marker of the
+reply; the confirmation follows 3 cycles (write reply) or 5 cycles (read reply) after it (TC-IN-09). Between two
+cores without network delay a read of n >= 4 bytes takes n + 63 cycles from the request to the confirmation (64-bit
+memory, L = 0; TC-CO-11).
+
+## 10. Verification and tools
 
 ```shell
 python run.py -p 8                          # regression with GHDL
@@ -258,7 +316,7 @@ python run.py --compile-order               # compile_order.txt of the synthesis
 python tools/synth_vivado.py --part <part>  # resources and timing with AMD Vivado
 ```
 
-## 10. Corrected defects
+## 11. Corrected defects
 
 Defects of earlier versions that change the behaviour of a system. The version is the Open Logic tag that the
 submodule `open-logic/` pins.

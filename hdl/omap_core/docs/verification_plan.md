@@ -32,6 +32,7 @@ the simulator output) for TC-CO-10. Simulator: GHDL.
 | `test_stress` (TC-CO-08) | Both Initiators with 16 writes and 16 reads each, eight user packets in each direction, memories with 30 % backpressure | CO-IF-01, CO-IF-02, CO-IF-03, CO-MX-01 |
 | `test_pipelined` (TC-CO-09) | Configuration `transactions8`: 24 writes and 24 reads of A with up to eight outstanding commands, memory of B with 30 % backpressure | CO-IF-03, CO-MX-01 |
 | `test_idle` (TC-CO-10) | Configuration `ieee_warnings`: after the reset the cores stay idle for 10 us; A is configured through its register file (identification, logical addresses, key, a window, timeout, interrupt enable, EDAC channel); both cores stay idle for 10 us; the first commands pass in both directions (writes with a partly filled last word, a verified write, reads, a read-modify-write) with a user packet in each direction; then B is configured. The post check fails on any numeric_std metavalue warning after the start marker and requires the warning of the testbench process `p_ieee_control` before it, which shows that the IEEE warnings are enabled. | CO-IF-03 |
+| `test_timing` (TC-CO-11) | Writes and reads of 0 to 300 bytes from the Initiator of A to the Target of B: command taken by B, write reply taken by A, read request to confirmation; reads of 16 and 256 bytes and writes of 64 and 256 bytes back to back from the user port of A to the Target of B (period from 5 and 10 commands) | CO-PF-01 |
 
 ## 4. Requirement coverage
 
@@ -47,3 +48,4 @@ the simulator output) for TC-CO-10. Simulator: GHDL.
 | CO-MX-01 | TC-CO-01, TC-CO-02, TC-CO-04, TC-CO-08, TC-CO-09 |
 | CO-NO-01 | TC-CO-02, TC-CO-05 |
 | CO-NO-02 | TC-CO-05, TC-CO-06 |
+| CO-PF-01 | TC-CO-11 |

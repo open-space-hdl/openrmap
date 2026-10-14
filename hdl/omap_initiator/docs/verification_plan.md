@@ -28,6 +28,7 @@ characters of the data VVC and take and drop the commands. Simulator: GHDL.
 | `test_no_table` (TC-IN-06) | Without table: reply without command confirmed, same Transaction Identifier twice sent | IN-TT-04 |
 | `test_reset` (TC-IN-08) | Reset in each of the first 80 cycles of a write with Target SpaceWire Address and data, of a rejected request held by the user and of a request waiting for a free entry; a write every 10 resets and a read with reply at the end are executed normally | IN-IF-05 |
 | `test_stress` (TC-IN-07) | Random backpressure and gaps on all four streams, 30 writes and reads with replies interleaved, Reply Addresses of 0 to 8 bytes | IN-IF-01, IN-IF-02, IN-IF-03 |
+| `test_timing` (TC-IN-09) | Clock cycles of write and read commands of 0 to 300 bytes from the request, of a write with a Target SpaceWire Address and a Reply Address of 4 bytes each, of writes without reply back to back (period from 5 and 10 requests), of write and read replies, the read data and the confirmations | IN-PF-01, IN-PF-02 |
 
 ## 4. Requirement coverage
 
@@ -45,3 +46,4 @@ characters of the data VVC and take and drop the commands. Simulator: GHDL.
 | IN-TT-02 | TC-IN-04 |
 | IN-TT-03 | TC-IN-05 |
 | IN-TT-04 | TC-IN-06 |
+| IN-PF-01, IN-PF-02 | TC-IN-09 |

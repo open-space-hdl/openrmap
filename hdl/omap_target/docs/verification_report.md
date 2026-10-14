@@ -6,7 +6,7 @@ Run on 2026-10-14 with GHDL 6.0.0 (mcode), VUnit 5.0.0.dev7, UVVM 2026.03.20: `p
 
 | Testbench | Tests | Passed |
 | --- | --- | --- |
-| `omap_target_tb` | 29 (17 tests, TC-TG-01, 02, 03, 04, 16 in two configurations, TC-TG-14 in three, TC-TG-17 in six) | 29 |
+| `omap_target_tb` | 37 (19 tests, TC-TG-01, 02, 03, 04, 16 in two configurations, TC-TG-14 and TC-TG-19 in three, TC-TG-18 in five, TC-TG-17 in six) | 37 |
 
 ## 2. Summary
 

@@ -40,6 +40,12 @@ for packets of other protocols.
 | CO-NO-01 | The core shall implement a node that is Target and Initiator, Target only or Initiator only (`Target_g`, `Initiator_g`). | 5.7.1.1, 5.7.1.2a, 5.7.1.3a |
 | CO-NO-02 | The node type, the user port and the product characteristics fixed by generics shall be readable in the register file; the conformance statement and the product characteristics tables are in the user guide. | 5.8.1, 5.8.2 |
 
+### 2.5 Performance
+
+| ID | Requirement | ECSS |
+| --- | --- | --- |
+| CO-PF-01 | A received packet shall pass the demultiplexer at one character per clock cycle with at most four further cycles per packet, and commands back to back shall be executed at the rate of the Target (TG-PF-01 to TG-PF-03). | none (performance) |
+
 ## 3. Configuration parameters
 
 | Generic | Default | Range | Description |
