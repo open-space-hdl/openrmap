@@ -105,7 +105,7 @@ Three properties of the standard shape the architecture more than any single fea
 
 | Driver | Consequence |
 | --- | --- |
-| Use in space: single event upsets in buffers and registers | SECDED ECC on every buffer, state machines with a recovery state, an EDAC monitor in the register file (P5) |
+| Use in space: single event upsets in buffers and registers | SECDED ECC on every buffer, state machines with a recovery state, an EDAC monitor in the register file, the TMR of the synthesis tool for all other logic (P5) |
 | Protection of the Target memory | Authorisation by logical address, key, address windows with permissions and an optional application port (P6) |
 | Integration with a SpaceWire port | Packet ports in the N-Char format of the OpenWire core, packets of other protocols passed through (P7) |
 | Technology independence | AXI4, AXI4-Stream and AXI4-Lite interfaces, no vendor primitive (P10) |
@@ -131,7 +131,7 @@ Three properties of the standard shape the architecture more than any single fea
 | P2 | Streams everywhere | Every data path between blocks is a valid / ready stream (Open Logic AXI4-Stream conventions) or a valid-only stream of events. |
 | P3 | One clock domain | All blocks run in `Clk`. The clock domain crossings of the SpaceWire port stay in the port. |
 | P4 | One management interface | All configuration, status and error information lives in one register file behind one AXI4-Lite port, generated from a single register description (VHDL package, documentation, C header). |
-| P5 | Fault tolerance by construction | All buffers are `olo_ft_*` entities (SECDED ECC). State machines have a defined recovery state. ECC events are counted in the register file; a double error is contained and never written to memory or sent as valid data. |
+| P5 | Fault tolerance by construction | All buffers are `olo_ft_*` entities (SECDED ECC). State machines have a defined recovery state. ECC events are counted in the register file; a double error is contained: it is never sent as valid data, and the command whose data it hit ends with status 1. All other logic relies on the triple modular redundancy (TMR) of the synthesis tool ([user guide, section 6](user_guide.md#6-protection-scope)). |
 | P6 | Authorisation before access | No byte of Target memory is read or written before the command is authorised (ECSS 5.3.3.5, 5.4.3.5, 5.5.3.5). |
 | P7 | Packet format of the SpaceWire port | All packet ports use the N-Char stream of the OpenWire core, so that the core connects to its packet ports without adaptation. |
 | P8 | Verifiable in isolation | Each module has a specification and a testbench that drives only its ports. The RMAP model of the testbenches (packet builder, packet checker, CRC) is written independently of the RTL. |
@@ -164,12 +164,12 @@ replies, commands and user packets into the transmitted packet stream without in
 | D9 | One priority of the status codes: header checks (2, 12, 3, 11, 9, 10) before packet end errors (7, 5, 6), Data CRC (4), external authorisation (10) and memory errors (1) | ECSS 5.6.1d leaves the choice to the application; a fixed order makes the reply deterministic and testable |
 | D10 | The Initiator takes a request descriptor and an 8-bit data stream and returns a confirmation descriptor and an 8-bit data stream; read data is passed on while it arrives and the confirmation tells whether it is valid | No buffer for reply data; the user discards data of a failed confirmation (ECSS 5.4.3.12) |
 | D11 | An optional transaction table in the Initiator holds the outstanding commands, associates replies by TID, rejects duplicate TIDs and ends commands without reply after a timeout | Association of replies (ECSS 5.1.8, 5.3.3.9b) and the reply timeout of the Initiator user application (ECSS 4.3.1) in hardware |
-| D12 | The protocol state machines have a defined recovery state, without TMR: the `when others` branch leads to it from an illegal state where the synthesis tool implements the state machine safe, and the reset input restarts it from any state | Same as OpenWire; RMAP recovers through the reply status and the Initiator timeout |
+| D12 | The protocol state machines have a defined recovery state: the `when others` branch leads to it from an illegal state where the synthesis tool implements the state machine safe, and the reset input restarts it from any state. Their registers rely on the TMR of the synthesis tool like all other logic ([user guide, section 6](user_guide.md#6-protection-scope)) | Same as OpenWire; RMAP recovers through the reply status and the Initiator timeout |
 
 ### Clock and reset
 
 All blocks run in `Clk`. The reset input `Rst` is synchronous and high-active (Open Logic convention); the integrator
-synchronises it to `Clk`, for example with `olo_base_reset_gen`.
+synchronises it to `Clk` with a triplicated synchroniser, for example `olo_base_reset_gen` with `SyncTmr_g` = true.
 
 ### Internal interfaces
 
@@ -237,7 +237,7 @@ built from and the ECSS requirements it owns (P1: no clause is owned twice).
 | --- | --- |
 | No RMAP CRC | The CRC of ECSS 5.2 is a function of `omap_pkg`, checked against the patterns of ECSS Annex A |
 | No packet-atomic stream multiplexer | CO-2: `olo_base_arb_rr` with a packet lock |
-| No TMR helper for protocol state machines | Recovery state of every state machine (D12) |
+| No TMR helper for protocol state machines | Recovery state of every state machine (D12); the registers rely on the TMR of the synthesis tool ([user guide, section 6](user_guide.md#6-protection-scope)) |
 
 ## 9 Verification architecture
 

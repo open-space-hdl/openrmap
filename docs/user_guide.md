@@ -43,8 +43,9 @@ node works without software. A flight configuration narrows the windows with `Wi
 ## 3. Clock and reset
 
 All of the core runs in `Clk`; there is no clock domain crossing. `Rst` is synchronous and high-active (Open Logic
-convention); synchronise its release to `Clk`, for example with `olo_base_reset_gen`. The packet ports pass one
-character per cycle: at 100 MHz the core keeps up with any SpaceWire link rate.
+convention); synchronise its release to `Clk` with a triplicated synchroniser, for example `olo_base_reset_gen` with
+`SyncTmr_g` = true (section 6). The packet ports pass one character per cycle: at 100 MHz the core keeps up with
+any SpaceWire link rate.
 
 ## 4. Interfaces
 
@@ -114,15 +115,52 @@ event flags. The register map is in [register_map.md](../hdl/omap_mib/docs/regis
 5. In operation read the counters (cleared by a write), TGT_LAST for the last command of the Target and ECC_STATUS
    and ECC_COUNT for the EDAC of the buffers.
 
-## 6. Integration constraints
+## 6. Protection scope
+
+The core is designed for radiation environments together with the triple modular redundancy (TMR) of the synthesis
+tool, like the Open Logic ft entities it is built on. It protects the parts in the first rows itself and relies on
+TMR for all other logic:
+
+| Part | Protection | Indication and test |
+| --- | --- | --- |
+| Data buffers of the RMAP Target: write buffer (`olo_ft_fifo_sync`, EDAC channel 0), write and read data buffers of the memory master `olo_ft_axi_master_full` (channels 1 and 2) | SECDED ECC of the Open Logic ft entities: a single error is corrected, a double error is detected and contained: a write or read-modify-write ends with the status "general error code" (1), a read reply ends with an EEP after the data (see below) | EVENTS.ECC_SEC, EVENTS.ECC_DED, ECC_STATUS, ECC_SELECT and ECC_COUNT, `Irq` through IRQ_EN; status 1 in the reply, TGT_LAST and the indication of the command; error injection through the ECC_INJECT register |
+| Clock domain crossings and reset synchronisers | The core has one clock domain and no synchroniser of its own. Synchronise the release of `Rst` with a triplicated synchroniser, for example `olo_base_reset_gen` with `SyncTmr_g` = true (section 3): three synchroniser chains and a majority voter. Their registers carry the Synplify attribute `syn_radhardlevel` = `none`, so the TMR of the synthesis tool adds no voters between the stages | none |
+| State machines | Recovery state through the `when others` branch and the reset; a command of the Initiator whose reply is lost ends with the reply timeout (INI_TIMEOUT, with `Transactions_g` > 0) | none |
+| All other logic: registers of the control and data paths, counters, pointers, pipeline registers, the transaction table of the Initiator and the register file | TMR of the synthesis tool (for example `syn_radhardlevel` = `tmr` with Synplify, or the equivalent setting of the tool chain). The core adds no protection of its own for this logic; without TMR, an upset in it is not covered | synthesis report |
+
+A double error is never passed on as valid data. In a write the word with the double error is written to memory with
+the other data of the command, and the reply and the indication carry status 1, so the Initiator knows that the
+addressed memory holds undefined data and can repeat the write. This applies to verified writes as well: the Data CRC is
+checked as the data enters the write buffer, so a double error that arises in the buffer afterwards is reported, not
+prevented. A read-modify-write with a double error ends with status 1; after a double error in the read data nothing
+is written. In a read reply the data is followed by an EEP instead of the Data CRC and the EOP (ECSS 5.4.3.10c.1), so
+the Initiator recognises the data as invalid. ECC_INJECT writes a single or a double error into the next word written
+to a buffer for tests of the software.
+
+The integrator:
+
+- enables the TMR of the synthesis tool for the core and the logic around it,
+- checks in the synthesis report that TMR was applied, that the synchroniser chains of the crossings were not
+  triplicated a second time, and that no register-based storage meant to be protected by TMR was inferred as a RAM
+  primitive,
+- requests safe state machines, so that synthesis keeps the `when others` branches (AMD Vivado: property
+  `FSM_SAFE_STATE` = `default_state` on the state registers; Synplify: attribute `syn_encoding` = `safe`),
+- protects the configuration memory of SRAM-based FPGAs by scrubbing; this is part of the FPGA design, not of the
+  core.
+
+The ECC paths are verified in simulation by error injection. Whether the protection as a whole meets the
+requirements of a mission is shown by a radiation test with the core in operation (TRL 5).
+
+## 7. Integration constraints
 
 | Constraint | Reason |
 | --- | --- |
+| TMR of the synthesis tool enabled for the core | The core protects its data buffers itself and relies on TMR for all other logic (section 6) |
 | Two nodes that are Initiator and Target of each other on one link need `Transactions_g` = 1 (one outstanding command with reply per Initiator), or receive buffering in front of each core for the commands the other node can have outstanding | A Target receives the next command only after its reply has been sent, and a reply waits behind a command of the own Initiator. With several outstanding commands in both directions both Targets can wait while each link carries a command the other Target does not take ([omap_core architecture](../hdl/omap_core/docs/architecture.md), section 4) |
 | `M_RepData_*`, `M_Conf_*` and `M_User_*` must be served | A stalled output stalls the received packet stream and the link |
 | RMAP address bits above `AxiAddrWidth_g` must be zero in the windows | Such commands are rejected with status 10 |
 
-## 7. Conformance
+## 8. Conformance
 
 OpenRMAP with `Target_g` and `Initiator_g` true implements the subset "RMAP Initiator and Target" of ECSS 5.8.1 with
 the write, read and read-modify-write commands:
@@ -138,7 +176,7 @@ The [compliance matrix](compliance.md) lists the requirements and test cases of 
 characteristics of the Target (ECSS 5.8.2.3b, 5.8.2.4b, 5.8.2.5b) follow; values in brackets are generics or
 registers.
 
-### 7.1 Write command (ECSS Table 5-6)
+### 8.1 Write command (ECSS Table 5-6)
 
 | Action | Supported | Maximum Data Length (bytes) | Non-aligned access accepted |
 | --- | --- | --- | --- |
@@ -160,7 +198,7 @@ registers.
 | Address incrementation | Incrementing and single address |
 | Status codes returned | 1 to 7, 9, 10, 12 |
 
-### 7.2 Read command (ECSS Table 5-8)
+### 8.2 Read command (ECSS Table 5-8)
 
 | Action | Supported | Maximum Data Length (bytes) | Non-aligned access accepted |
 | --- | --- | --- | --- |
@@ -181,7 +219,7 @@ registers.
 | Address incrementation | Incrementing and single address |
 | Status codes returned | 2, 3, 6, 7, 10, 12; a memory error during the data ends the reply with an EEP |
 
-### 7.3 Read-modify-write command (ECSS Table 5-10)
+### 8.3 Read-modify-write command (ECSS Table 5-10)
 
 | Action | Supported | Maximum Data Length (bytes) | Non-aligned access accepted |
 | --- | --- | --- | --- |
@@ -201,7 +239,7 @@ registers.
 | Accepted address ranges | The enabled windows with read-modify-write permission, within `AxiAddrWidth_g` |
 | Status codes returned | 1 to 7, 10 to 12 |
 
-## 8. Verification and tools
+## 9. Verification and tools
 
 ```shell
 python run.py -p 8                          # regression with GHDL
