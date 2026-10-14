@@ -237,9 +237,15 @@ begin
         v.RdValid  := '0';
         Inc_v      := (others => '0');
 
+        -- The register address of the AXI4-Lite slave is defined only during an access
+        if RbWr = '1' or RbRd = '1' then
+            Addr_v := to_integer(unsigned(RbAddr(9 downto 2) & "00"));
+        else
+            Addr_v := 0;
+        end if;
+
         -- Register writes; a clear is applied before the events of the same cycle (MG-RF-05)
-        Addr_v := to_integer(unsigned(RbAddr(9 downto 2) & "00"));
-        Wr_v   := RbWrData;
+        Wr_v := RbWrData;
         if RbWr = '1' then
 
             case Addr_v is
@@ -438,8 +444,7 @@ begin
         v.Irq := toSl((r.Events and r.IrqEn) /= "000000000");
 
         -- Register reads: data one cycle after the request
-        Addr_v := to_integer(unsigned(RbAddr(9 downto 2) & "00"));
-        Rd_v   := (others => '0');
+        Rd_v := (others => '0');
 
         case Addr_v is
 

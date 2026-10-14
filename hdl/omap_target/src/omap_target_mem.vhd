@@ -270,6 +270,11 @@ begin
                 r.WrRemain <= (others => '0');
                 r.WrValid  <= '0';
                 r.RdRemain <= (others => '0');
+                -- Address and size enter the arithmetic of the master also while it is idle; the unused byte lanes
+                -- of a partly filled last word are written to the ECC buffer of the master
+                r.Addr   <= (others => '0');
+                r.Size   <= (others => '0');
+                r.WrWord <= (others => '0');
             end if;
         end if;
     end process;

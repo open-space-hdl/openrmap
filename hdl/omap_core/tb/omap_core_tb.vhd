@@ -230,6 +230,20 @@ begin
             axistream_expect(AXISTREAM_VVCT, VvcCoUsrRx_c + c, omapPacket(bytes, eep), msg);
         end procedure;
 
+        -- Register file of core c: identification and a configuration that keeps the core reachable
+        procedure configure (c : natural) is
+        begin
+            regCheck(c, RegId_c, RegMapId_c, "ID");
+            regWrite(c, RegTgtLa_c, x"0003" & std_logic_vector(to_unsigned(16#40# + c, 8)) & CoreLa_c(c));
+            regWrite(c, RegTgtKey_c, x"00000100");
+            regWrite(c, RegWinBase_c + RegWindowStride_c, x"00001000");
+            regWrite(c, RegWinLast_c + RegWindowStride_c, x"00001FFF");
+            regWrite(c, RegWinCtrl_c + RegWindowStride_c, x"00000007");
+            regWrite(c, RegIniTimeout_c, x"012C0009");
+            regWrite(c, RegIrqEn_c, x"000001FF");
+            regWrite(c, RegEccSelect_c, x"00000001");
+        end procedure;
+
         procedure awaitStreams is
         begin
 
@@ -514,6 +528,35 @@ begin
                          key => x"5A", tla => x"31");
                 awaitStreams;
 
+            elsif run("test_idle") then
+                -- TC-CO-10: cores after the reset with the IEEE warnings enabled. A is configured through its register
+                -- file before its first command, B after its first commands; the cores stay idle in between. The
+                -- VUnit configuration of this test fails on a metavalue warning after the marker below.
+                report "OMAP_IDLE_CHECK_START";
+                wait for 10 us;
+                configure(A_c);
+                wait for 10 us;
+                -- First commands: partly filled last words, a verified write, reads, a read-modify-write
+                transfer(A_c, x"6C", 16#100#, 6, 1, tbBytes(6, 1), x"00", "00", "first write of A");
+                transfer(B_c, x"7C", 16#200#, 5, 2, tbBytes(5, 2), x"00", "00", "first write of B");
+                axistream_expect(AXISTREAM_VVCT, VvcCoRepData_c + A_c, tbBytes(6, 1), "read data of A");
+                transfer(A_c, x"4C", 16#100#, 6, 3, tbBytes(0), x"00", "00", "first read of A");
+                axistream_expect(AXISTREAM_VVCT, VvcCoRepData_c + B_c, tbBytes(5, 2), "read data of B");
+                transfer(B_c, x"4C", 16#200#, 5, 4, tbBytes(0), x"00", "00", "first read of B");
+                axistream_expect(AXISTREAM_VVCT, VvcCoRepData_c + A_c, tbBytes(2, 1), "old data of the read-modify-write");
+                transfer(A_c, x"5C", 16#100#, 4, 5, tbCat(tbBytes(2, 16#80#), tbBytes(2, 16#FF#)), x"00", "00",
+                         "first read-modify-write of A");
+                userExpect(B_c, tbBytes(9, 3), "user packet from A");
+                userSend(A_c, tbBytes(9, 3));
+                userExpect(A_c, tbBytes(9, 4), "user packet from B");
+                userSend(B_c, tbBytes(9, 4));
+                awaitStreams;
+                checkMem(B_c, 16#100#, tbCat(tbOne(x"80"), tbBytes(5, 2)), "memory of B");
+                checkMem(A_c, 16#200#, tbBytes(5, 2), "memory of A");
+                configure(B_c);
+                regCheck(B_c, RegTgtCntOk_c, x"00010001", "B: one write, one read");
+                wait for 10 us;
+
             elsif run("test_stress") then
                 -- TC-CO-08: both Initiators, user packets in both directions, memory with backpressure
                 regWrite(A_c, RegIniTimeout_c, x"00000009");
@@ -595,6 +638,17 @@ begin
         end loop;
 
         omapTestEnd(runner);
+    end process;
+
+    -- Positive control of TC-CO-10: one numeric_std metavalue warning of the testbench itself, before the marker of
+    -- the test, shows that the IEEE warnings are enabled however quiet the cores are
+    p_ieee_control : process is
+        variable Undefined_v : std_logic_vector(3 downto 0);
+    begin
+        assert to_integer(unsigned(Undefined_v)) = 0
+            report "IEEE warning control"
+            severity note;
+        wait;
     end process;
 
     i_th : entity work.omap_core_th
