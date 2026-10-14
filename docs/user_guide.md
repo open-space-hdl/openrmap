@@ -198,6 +198,11 @@ registers.
 | Address incrementation | Incrementing and single address |
 | Status codes returned | 1 to 7, 9, 10, 12 |
 
+A verified write is checked with the Data CRC and the Data Length before any byte is written to memory (ECSS
+5.3.3.6.2, 5.3.3.6.4). The check covers the data as received: a double error that arises afterwards in the write
+buffer or in the write data of the memory master is not kept out of memory, and the command ends with status 1
+(section 6).
+
 ### 8.2 Read command (ECSS Table 5-8)
 
 | Action | Supported | Maximum Data Length (bytes) | Non-aligned access accepted |
