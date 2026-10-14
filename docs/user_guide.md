@@ -24,7 +24,7 @@ the clock constraint for AMD Vivado.
 | `Passthrough_g` | true | User port for packets of other protocols; without it they are discarded and counted |
 | `AxiAddrWidth_g` | 32 | Address width of the memory interface (12 to 40). RMAP address bits above it must be zero |
 | `AxiDataWidth_g` | 32 | Data width of the memory interface (8 to 1024, power of 2); the memory word of single-address accesses |
-| `AxiMaxBeats_g` | 16 | Maximum burst length of the memory interface |
+| `AxiMaxBeats_g` | 16 | Maximum burst length of the memory interface (1 to 256); longer accesses are split into several bursts |
 | `BufferBytes_g` | 256 | Write buffer: maximum Data Length of a verified write |
 | `ChunkBytes_g` | 32 | Chunk of a non-verified write that is written to memory once it is complete in the buffer |
 | `Windows_g` | 4 | Address windows of the Target (0 to 8) |
@@ -257,3 +257,12 @@ python tools/regmap.py --check              # generated register map up to date
 python run.py --compile-order               # compile_order.txt of the synthesis sources
 python tools/synth_vivado.py --part <part>  # resources and timing with AMD Vivado
 ```
+
+## 10. Corrected defects
+
+Defects of earlier versions that change the behaviour of a system. The version is the Open Logic tag that the
+submodule `open-logic/` pins.
+
+| Defect | Affected | Correction |
+| --- | --- | --- |
+| Memory accesses of the Target with `AxiMaxBeats_g` smaller than `AxiDataWidth_g`/8 (32-bit bus with 1 to 3 beats, 64-bit bus with 1 to 7): every burst of an access longer than one burst used the address of the first burst. Reads returned the data of the first burst again; writes overwrote the words of the first burst, with an unaligned start also the bytes before the start address in its first word, and left the following addresses unwritten; read-modify-writes across a word boundary with one beat read and wrote the first word in place of the second. The reply reported success. The cause is the address increment of `olo_axi_master_simple` of Open Logic | Every version with Open Logic up to 4.7.0-ft.4; with 16 beats (the default) or any `AxiMaxBeats_g` of at least `AxiDataWidth_g`/8 not affected | Open Logic 4.7.0-ft.5; TC-TG-17 |

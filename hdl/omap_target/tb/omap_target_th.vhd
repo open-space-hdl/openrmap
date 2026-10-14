@@ -35,7 +35,8 @@ entity omap_target_th is
         Windows_g      : natural  := 4;
         ExtAuth_g      : boolean  := false;
         BufferBytes_g  : positive := 256;
-        ChunkBytes_g   : positive := 32
+        ChunkBytes_g   : positive := 32;
+        AxiMaxBeats_g  : positive := 16
     );
     port (
         Clk : out   std_logic;
@@ -125,7 +126,7 @@ begin
         generic map (
             AxiAddrWidth_g => 32,
             AxiDataWidth_g => AxiDataWidth_g,
-            AxiMaxBeats_g  => 16,
+            AxiMaxBeats_g  => AxiMaxBeats_g,
             BufferBytes_g  => BufferBytes_g,
             ChunkBytes_g   => ChunkBytes_g,
             Windows_g      => Windows_g,

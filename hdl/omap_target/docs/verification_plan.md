@@ -10,13 +10,15 @@ backdoor of the AXI memory model. The CRC test patterns of ECSS Annex A.4 are pa
 
 | Testbench | Harness | DUT and environment |
 | --- | --- | --- |
-| `omap_target_tb` | `omap_target_th` | `omap_target` at 100 MHz (AXI address width 32, `BufferBytes_g` 256, `ChunkBytes_g` 32), AXI4-Stream VVCs on the command and reply streams, AXI memory model instance 0, a responder on the external authorisation port, monitors of the indications and events |
+| `omap_target_tb` | `omap_target_th` | `omap_target` at 100 MHz (AXI address width 32, `AxiMaxBeats_g` 16, `BufferBytes_g` 256, `ChunkBytes_g` 32), AXI4-Stream VVCs on the command and reply streams, AXI memory model instance 0, a responder on the external authorisation port, monitors of the indications and events |
 
 VUnit configurations: `windows4` and `windows0` (four and no address windows) for TC-TG-01; `axi32` and `axi64`
 (AXI data width 32 and 64, memory word of 4 and 8 bytes) for TC-TG-02, 03, 04 and 14; `chunk128` (`ChunkBytes_g`
 128, so that the data buffer of the AXI master fills and applies backpressure) for TC-TG-14; `ext_auth`
-(`ExtAuth_g`) for TC-TG-12 and TC-TG-16, `int_auth` for TC-TG-16. All other tests run with four windows, a 32-bit
-AXI bus and no external authorisation. Simulator: GHDL.
+(`ExtAuth_g`) for TC-TG-12 and TC-TG-16, `int_auth` for TC-TG-16; `axi32_beats1` to `axi32_beats4` (32-bit AXI bus,
+`AxiMaxBeats_g` 1 to 4) and `axi64_beats7`, `axi64_beats8` (64-bit AXI bus, `AxiMaxBeats_g` 7 and 8, `ChunkBytes_g`
+128) for TC-TG-17: bursts shorter than the memory word in bytes and the next length. All other tests run with four
+windows, a 32-bit AXI bus, bursts of 16 beats and no external authorisation. Simulator: GHDL.
 
 ## 3. Test cases
 
@@ -38,6 +40,7 @@ AXI bus and no external authorisation. Simulator: GHDL.
 | `test_stress` (TC-TG-14) | 40 % random backpressure of the AXI memory, random gaps on the command stream and random backpressure on the reply stream: 4 kB write across a 4 kB boundary and read back, 40 commands of all kinds back to back, a 1000-byte write with 90 % memory backpressure that fills the write buffer, replies requested while the encoder still sends the previous reply | TG-IF-01, TG-IF-02, TG-EX-02, TG-EX-04 |
 | `test_ecc` (TC-TG-15) | Single errors in the write buffer and in the write and read data of the master corrected and counted; double errors in the write buffer and in the write data of the master give status 1, in the read data of the master an EEP after the data | TG-EX-06 |
 | `test_reset` (TC-TG-16) | Reset in each of the first 140 cycles of a verified write, a non-verified write, a read with Reply Address, a read-modify-write and a rejected write (with internal and external authorisation; the harness drops the rest of the command and the replies, the memory model drops its open transactions); a read every 20 resets and a write at the end are executed normally | TG-IF-06 |
+| `test_burst_split` (TC-TG-17) | Commands that the AXI master splits into transactions of `AxiMaxBeats_g` beats, at every start offset of a memory word: incrementing reads and writes of 1 byte to two transactions and one word more, compared with the memory (writes: exactly the addressed bytes written, the bytes around them unchanged); read-modify-write of 1 to 4 bytes, across a word boundary at the last offsets | TG-EX-03, TG-EX-04, TG-EX-05 |
 
 ## 4. Requirement coverage
 
@@ -58,9 +61,9 @@ AXI bus and no external authorisation. Simulator: GHDL.
 | TG-AU-08 | TC-TG-07, TC-TG-08, TC-TG-12 |
 | TG-EX-01 | TC-TG-02, TC-TG-08 |
 | TG-EX-02 | TC-TG-02, TC-TG-09, TC-TG-14 |
-| TG-EX-03 | TC-TG-02 |
-| TG-EX-04 | TC-TG-03, TC-TG-10, TC-TG-14 |
-| TG-EX-05 | TC-TG-04, TC-TG-10, TC-TG-12 |
+| TG-EX-03 | TC-TG-02, TC-TG-17 |
+| TG-EX-04 | TC-TG-03, TC-TG-10, TC-TG-14, TC-TG-17 |
+| TG-EX-05 | TC-TG-04, TC-TG-10, TC-TG-12, TC-TG-17 |
 | TG-EX-06 | TC-TG-11, TC-TG-15 |
 | TG-EX-07 | TC-TG-02, TC-TG-03, TC-TG-04 |
 | TG-TX-01 | TC-TG-01, TC-TG-02 |

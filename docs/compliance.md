@@ -28,7 +28,7 @@ the standard" of the module specifications.
 | 5.3.3.2, 5.3.3.3 | Write request and write command | IN-1 | IN-IF-01, IN-TX-03 | TC-IN-01, TC-IN-07 | Verified |
 | 5.3.3.4 | Write data request | TG-1 (5.3.3.4.1 to 5.3.3.4.5), TG-2 (5.3.3.4.6 to 5.3.3.4.8) | TG-AU-01, TG-AU-02, TG-IF-01, TG-RX-02, TG-RX-03, TG-RX-04 | TC-TG-01, TC-TG-05, TC-TG-06, TC-TG-14 | Verified |
 | 5.3.3.5 | Write data authorisation | TG-2 | MG-IF-02, MG-RF-01, TG-AU-03, TG-AU-04, TG-AU-07, TG-IF-03, TG-IF-04 | TC-MB-01, TC-MB-02, TC-MB-03, TC-MB-04, TC-TG-07, TC-TG-12 | Verified |
-| 5.3.3.6 | Write data | TG-3 (5.3.3.6.2 to 5.3.3.6.13), TG-4 (5.3.3.6.1, 5.3.3.6.14) | TG-AU-06, TG-EX-01, TG-EX-02, TG-EX-03 | TC-TG-02, TC-TG-07, TC-TG-08, TC-TG-09, TC-TG-14 | Verified |
+| 5.3.3.6 | Write data | TG-3 (5.3.3.6.2 to 5.3.3.6.13), TG-4 (5.3.3.6.1, 5.3.3.6.14) | TG-AU-06, TG-EX-01, TG-EX-02, TG-EX-03 | TC-TG-02, TC-TG-07, TC-TG-08, TC-TG-09, TC-TG-14, TC-TG-17 | Verified |
 | 5.3.3.7 | Write data indication | TG-3 | TG-IF-05 | TC-TG-01 | Verified |
 | 5.3.3.8 | Write reply | TG-5 | TG-TX-01 | TC-TG-01, TC-TG-02 | Verified |
 | 5.3.3.9 | Write command complete confirmation | IN-2 | IN-IF-03, IN-TT-01, IN-TT-04 | TC-IN-02, TC-IN-04, TC-IN-05, TC-IN-06, TC-IN-07 | Verified |
@@ -37,9 +37,9 @@ the standard" of the module specifications.
 | 5.4.1 | Read command format | TG-1 | IN-TX-01, IN-TX-02, TG-EX-07, TG-RX-01, TG-RX-05 | TC-IN-01, TC-TG-01, TC-TG-02, TC-TG-03, TC-TG-04, TC-TG-10 | Verified |
 | 5.4.2 | Read reply format | TG-5 | IN-RX-01, TG-TX-04 | TC-IN-02, TC-TG-01, TC-TG-03, TC-TG-04 | Verified |
 | 5.4.3.2, 5.4.3.3 | Read request and read command | IN-1 | IN-IF-01, IN-TX-03 | TC-IN-01, TC-IN-07 | Verified |
-| 5.4.3.4 | Read data request | TG-1 (5.4.3.4.1 to 5.4.3.4.5), TG-2 (5.4.3.4.6 to 5.4.3.4.9) | TG-AU-01, TG-AU-02, TG-EX-04, TG-RX-02, TG-RX-03, TG-RX-04 | TC-TG-01, TC-TG-03, TC-TG-05, TC-TG-06, TC-TG-10, TC-TG-14 | Verified |
+| 5.4.3.4 | Read data request | TG-1 (5.4.3.4.1 to 5.4.3.4.5), TG-2 (5.4.3.4.6 to 5.4.3.4.9) | TG-AU-01, TG-AU-02, TG-EX-04, TG-RX-02, TG-RX-03, TG-RX-04 | TC-TG-01, TC-TG-03, TC-TG-05, TC-TG-06, TC-TG-10, TC-TG-14, TC-TG-17 | Verified |
 | 5.4.3.5 | Read data authorisation | TG-2 | MG-IF-02, MG-RF-01, TG-AU-03, TG-AU-04, TG-AU-07, TG-IF-04 | TC-MB-01, TC-MB-02, TC-MB-03, TC-MB-04, TC-TG-07, TC-TG-12 | Verified |
-| 5.4.3.6 | Read data | TG-4 | TG-EX-04 | TC-TG-03, TC-TG-10, TC-TG-14 | Verified |
+| 5.4.3.6 | Read data | TG-4 | TG-EX-04 | TC-TG-03, TC-TG-10, TC-TG-14, TC-TG-17 | Verified |
 | 5.4.3.7 | Read data indication | TG-3 | TG-IF-05 | TC-TG-01 | Verified |
 | 5.4.3.8 | Read reply | TG-5 | TG-TX-01 | TC-TG-01, TC-TG-02 | Verified |
 | 5.4.3.9 | Read data confirmation | IN-2 | IN-IF-03, IN-RX-04, IN-TT-01 | TC-IN-02, TC-IN-03, TC-IN-04, TC-IN-05, TC-IN-07 | Verified |
@@ -48,9 +48,9 @@ the standard" of the module specifications.
 | 5.5.1 | Read-modify-write command format | TG-1 | IN-TX-01, IN-TX-02, TG-AU-05, TG-RX-01, TG-RX-05 | TC-IN-01, TC-TG-01, TC-TG-07, TC-TG-10 | Verified |
 | 5.5.2 | Read-modify-write reply format | TG-5 | IN-RX-01, TG-TX-04 | TC-IN-02, TC-TG-01, TC-TG-03, TC-TG-04 | Verified |
 | 5.5.3.2, 5.5.3.3 | Read-modify-write request and command | IN-1 | IN-IF-01, IN-TX-03 | TC-IN-01, TC-IN-07 | Verified |
-| 5.5.3.4 | Read-modify-write data request | TG-1 (5.5.3.4.1 to 5.5.3.4.5), TG-2 (5.5.3.4.6, 5.5.3.4.7, 5.5.3.4.13, 5.5.3.4.15), TG-3 (5.5.3.4.8 to 5.5.3.4.12, 5.5.3.4.14) | TG-AU-01, TG-AU-02, TG-AU-05, TG-EX-05, TG-RX-02, TG-RX-03, TG-RX-04 | TC-TG-01, TC-TG-04, TC-TG-05, TC-TG-06, TC-TG-07, TC-TG-10, TC-TG-12 | Verified |
+| 5.5.3.4 | Read-modify-write data request | TG-1 (5.5.3.4.1 to 5.5.3.4.5), TG-2 (5.5.3.4.6, 5.5.3.4.7, 5.5.3.4.13, 5.5.3.4.15), TG-3 (5.5.3.4.8 to 5.5.3.4.12, 5.5.3.4.14) | TG-AU-01, TG-AU-02, TG-AU-05, TG-EX-05, TG-RX-02, TG-RX-03, TG-RX-04 | TC-TG-01, TC-TG-04, TC-TG-05, TC-TG-06, TC-TG-07, TC-TG-10, TC-TG-12, TC-TG-17 | Verified |
 | 5.5.3.5 | Read-modify-write authorisation | TG-2 | MG-IF-02, MG-RF-01, TG-AU-03, TG-AU-04, TG-AU-07, TG-IF-04 | TC-MB-01, TC-MB-02, TC-MB-03, TC-MB-04, TC-TG-07, TC-TG-12 | Verified |
-| 5.5.3.6, 5.5.3.7 | Read data, write data | TG-4 | TG-EX-05 | TC-TG-04, TC-TG-10, TC-TG-12 | Verified |
+| 5.5.3.6, 5.5.3.7 | Read data, write data | TG-4 | TG-EX-05 | TC-TG-04, TC-TG-10, TC-TG-12, TC-TG-17 | Verified |
 | 5.5.3.8 | Read-modify-write data indication | TG-3 | TG-IF-05 | TC-TG-01 | Verified |
 | 5.5.3.9 | Read-modify-write reply | TG-5 | TG-TX-01 | TC-TG-01, TC-TG-02 | Verified |
 | 5.5.3.10 | Read-modify-write complete confirmation | IN-2 | IN-IF-03, IN-RX-04, IN-TT-01 | TC-IN-02, TC-IN-03, TC-IN-04, TC-IN-05, TC-IN-07 | Verified |
