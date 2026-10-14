@@ -13,9 +13,10 @@ backdoor of the AXI memory model. The CRC test patterns of ECSS Annex A.4 are pa
 | `omap_target_tb` | `omap_target_th` | `omap_target` at 100 MHz (AXI address width 32, `BufferBytes_g` 256, `ChunkBytes_g` 32), AXI4-Stream VVCs on the command and reply streams, AXI memory model instance 0, a responder on the external authorisation port, monitors of the indications and events |
 
 VUnit configurations: `windows4` and `windows0` (four and no address windows) for TC-TG-01; `axi32` and `axi64`
-(AXI data width 32 and 64, memory word of 4 and 8 bytes) for TC-TG-02, 03, 04 and 14; `ext_auth` (`ExtAuth_g`) for
-TC-TG-12 and TC-TG-16, `int_auth` for TC-TG-16. All other tests run with four windows, a 32-bit AXI bus and no
-external authorisation. Simulator: GHDL.
+(AXI data width 32 and 64, memory word of 4 and 8 bytes) for TC-TG-02, 03, 04 and 14; `chunk128` (`ChunkBytes_g`
+128, so that the data buffer of the AXI master fills and applies backpressure) for TC-TG-14; `ext_auth`
+(`ExtAuth_g`) for TC-TG-12 and TC-TG-16, `int_auth` for TC-TG-16. All other tests run with four windows, a 32-bit
+AXI bus and no external authorisation. Simulator: GHDL.
 
 ## 3. Test cases
 
@@ -29,7 +30,7 @@ external authorisation. Simulator: GHDL.
 | `test_invalid_codes` (TC-TG-06) | Command codes 0b0000, 0b0001, 0b0100, 0b0101 (no reply) and 0b0110 (reply): status 2 | TG-AU-02 |
 | `test_authorisation` (TC-TG-07) | Logical addresses 0x42, 0x43 and 0xFE enabled and disabled, key check enabled and disabled, four windows with different permissions (bounds, crossing a bound, read, write, verified-only, read-modify-write, single address), alignment of single-address accesses, AXI address range, read-modify-write lengths 3 and 10, verified write of 257 bytes, priorities of the status codes; no memory access when rejected | TG-IF-03, TG-AU-03 to TG-AU-08 |
 | `test_verified_errors` (TC-TG-08) | Verified write with Data CRC error, early EOP, excess data, EEP after the Data CRC and in the data, EEP and Data CRC error together, without reply: no byte written | TG-EX-01, TG-AU-08 |
-| `test_unverified_errors` (TC-TG-09) | Non-verified write: Data CRC error after the data is written; early EOP (also with a slow memory, the incomplete chunk discarded after the complete ones are written) and EEP: only complete chunks written; excess data: Data Length bytes written; a short write whose last byte is the Data CRC writes nothing | TG-EX-02 |
+| `test_unverified_errors` (TC-TG-09) | Non-verified write: Data CRC error after the data is written; early EOP (also with a slow memory, the incomplete chunk discarded after the complete ones are written, and at a chunk boundary after 3 to 11 chunks with a memory that stalls 90 % of the cycles) and EEP: only complete chunks written; excess data: Data Length bytes written; a short write whose last byte is the Data CRC writes nothing | TG-EX-02 |
 | `test_read_rmw_end_errors` (TC-TG-10) | Data after a read header (status 6) and with an EEP (status 7) without execution; read-modify-write with Data CRC error, early EOP, excess data and EEP without memory access | TG-EX-04, TG-EX-05, TG-RX-05 |
 | `test_memory_errors` (TC-TG-11) | Error responses: non-verified and verified write status 1, read reply ended with an EEP after the data, read-modify-write read error (status 1, no data, nothing written) and write error (status 1, data read returned), normal operation afterwards | TG-EX-06 |
 | `test_ext_auth` (TC-TG-12) | External authorisation: request fields, accepted and rejected write, read and read-modify-write, EEP, early EOP, excess data and Data CRC error before the rejection, rejected write without reply, no request for a read-modify-write with a Data CRC error | TG-IF-04, TG-EX-05, TG-AU-08 |

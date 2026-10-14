@@ -71,9 +71,9 @@ The write buffer is an `olo_ft_fifo_sync` of `BufferBytes_g` bytes. `Received` c
 that many bytes are in the buffer and not committed; the remainder is issued when the last byte of the Data Length is
 received. A non-verified write commits from the start, a verified write only after the end of the packet when the
 Data CRC is correct and there is no excess data. After an early EOP or an EEP no further chunk is committed and the
-uncommitted bytes are discarded from the buffer. The bytes of a chunk are passed to the memory access block after its
-command has been accepted. A single-address write commits chunks that are multiples of the memory word
-(`ChunkBytes_g` is a multiple of it).
+uncommitted bytes are discarded from the buffer once every committed byte has been passed on. The bytes of a chunk are
+passed to the memory access block after its command has been accepted. A single-address write commits chunks that are
+multiples of the memory word (`ChunkBytes_g` is a multiple of it).
 
 The command completes when the end of the packet is known, every committed byte has left the buffer, the buffer is
 empty and the memory access block is idle. A memory error, or a double error of the buffer, then gives status 1 if no
@@ -87,15 +87,15 @@ status 7, both without reply.
 
 ## 5. Memory access (TG-4, `omap_target_mem`)
 
-`olo_ft_axi_master_full` executes commands of any byte address and length; its user side runs with the AXI data width.
-The block packs the write bytes of a command into words (first byte in the least significant byte, the last word of
-a command partly filled) and unpacks the read words into bytes. A single-address command is split into one AXI command
-of one memory word per word of data, all at the same address. `Busy` covers commands not yet issued or completed on
-AXI and bytes not yet packed. `Err` is set by an error response of a write, by the response of every read beat (the
-master itself reports only the response of the last beat of a burst), and by a double error in a data buffer of the
-master; the controller clears it at the start of every command.
+`olo_ft_axi_master_full` executes commands of any byte address and length. Its user side is 8 bits wide: the master
+places the write bytes of a command in their byte lanes of the AXI words and returns the read data as bytes. A
+single-address command is split into one AXI command of one memory word per word of data, all at the same address.
+`Busy` covers commands not yet issued or completed on AXI. `Err` is set by an error response on any write response or
+read beat of a command, which the master reports at the end of the command, and by a double error in a data buffer of
+the master; the controller clears it at the start of every command.
 
-The master runs in its high-latency mode with data buffers of two bursts of `AxiMaxBeats_g` words.
+The master runs in its high-latency mode with data buffers of two bursts of `AxiMaxBeats_g` words; the buffers hold
+one byte per ECC word.
 
 ## 6. Reply encoder (TG-5, `omap_target_tx`)
 

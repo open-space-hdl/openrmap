@@ -2,8 +2,8 @@
 # Copyright (c) 2026 by Julian Schneider
 # Authors: Julian Schneider
 # ---------------------------------------------------------------------------------------------------
-"""VUnit configurations of the Target testbench: external authorisation, a 64-bit memory bus and no address
-windows."""
+"""VUnit configurations of the Target testbench: external authorisation, a 64-bit memory bus, no address
+windows and chunks of 128 bytes."""
 
 
 def configure(lib):
@@ -15,5 +15,7 @@ def configure(lib):
         test = tb.test(name)
         test.add_config(name="axi32", generics={})
         test.add_config(name="axi64", generics={"AxiDataWidth_g": 64})
+    # Chunks larger than a third of the data buffer of the AXI master: the buffer applies backpressure
+    tb.test("test_stress").add_config(name="chunk128", generics={"ChunkBytes_g": 128})
     tb.test("test_annex_patterns").add_config(name="windows4", generics={})
     tb.test("test_annex_patterns").add_config(name="windows0", generics={"Windows_g": 0})

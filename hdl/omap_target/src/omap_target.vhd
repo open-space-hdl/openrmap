@@ -201,7 +201,14 @@ architecture rtl of omap_target is
 
     signal IndHdr : CmdHeader_t;
 
+    -- Error injection patterns: buffers of bytes, and the read buffer of bytes with the last flag
+    signal InjByte     : std_logic_vector(eccCodewordWidth(8) - 1 downto 0);
+    signal InjByteLast : std_logic_vector(eccCodewordWidth(9) - 1 downto 0);
+
 begin
+
+    InjByte     <= injPattern(eccCodewordWidth(8), ErrInj_Double);
+    InjByteLast <= injPattern(eccCodewordWidth(9), ErrInj_Double);
 
     -- TG-1
     i_rx : entity work.omap_target_rx
@@ -323,7 +330,7 @@ begin
             Ind_Replied    => Ind_Replied,
             Ecc_BufSec     => Ecc_Sec(0),
             Ecc_BufDed     => Ecc_Ded(0),
-            BufInj_BitFlip => injPattern(eccCodewordWidth(8), ErrInj_Double),
+            BufInj_BitFlip => InjByte,
             BufInj_Valid   => ErrInj_Valid(0)
         );
 
@@ -356,9 +363,9 @@ begin
             Ecc_WrDed     => Ecc_Ded(1),
             Ecc_RdSec     => Ecc_Sec(2),
             Ecc_RdDed     => Ecc_Ded(2),
-            WrInj_BitFlip => injPattern(eccCodewordWidth(AxiDataWidth_g), ErrInj_Double),
+            WrInj_BitFlip => InjByte,
             WrInj_Valid   => ErrInj_Valid(1),
-            RdInj_BitFlip => injPattern(eccCodewordWidth(AxiDataWidth_g + 1), ErrInj_Double),
+            RdInj_BitFlip => InjByteLast,
             RdInj_Valid   => ErrInj_Valid(2),
             M_Axi_AwAddr  => M_Axi_AwAddr,
             M_Axi_AwLen   => M_Axi_AwLen,

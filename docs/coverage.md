@@ -27,7 +27,7 @@ Closure rules:
 
 ## 2. Result
 
-Run on 2026-10-14: 51 tests, all passed, 10 minutes. Numbers are covered/total bins per
+Run on 2026-10-14: 52 tests, all passed, 11 minutes. Numbers are covered/total bins per
 file; bold marks a metric with misses.
 
 | File | Statements | Branches | FSM States | FSM Transitions | Conditions | Expressions |
@@ -43,11 +43,11 @@ file; bold marks a metric with misses.
 | `omap_pkg/src/omap_pkg.vhd` | 13/13 | 6/6 |  |  | 2/2 |  |
 | `omap_target/src/omap_target.vhd` | 18/18 | 2/2 |  |  |  |  |
 | `omap_target/src/omap_target_auth.vhd` | 53/53 | 37/37 |  |  | 26/26 | 3/3 |
-| `omap_target/src/omap_target_ctrl.vhd` | 269/269 | 164/164 | 16/16 | 43/43 | **65/74** | **7/10** |
-| `omap_target/src/omap_target_mem.vhd` | 59/59 | 47/47 |  |  | **41/48** | **4/6** |
+| `omap_target/src/omap_target_ctrl.vhd` | 270/270 | 164/164 | 16/16 | 43/43 | **63/72** | **11/14** |
+| `omap_target/src/omap_target_mem.vhd` | 37/37 | 31/31 |  |  | **20/22** | **2/6** |
 | `omap_target/src/omap_target_rx.vhd` | 89/89 | **66/67** |  |  | **14/15** | 6/6 |
 | `omap_target/src/omap_target_tx.vhd` | 84/84 | 44/44 | 8/8 | 16/16 | 3/3 | 2/2 |
-| Total | 1243/1245 (99.8 %) | 734/737 (99.6 %) | 39/39 (100.0 %) | 86/86 (100.0 %) | 243/264 (92.0 %) | 44/51 (86.3 %) |
+| Total | 1222/1224 (99.8 %) | 718/721 (99.6 %) | 39/39 (100.0 %) | 86/86 (100.0 %) | 220/236 (93.2 %) | 46/55 (83.6 %) |
 
 ## 3. Gaps found and closed
 
@@ -63,24 +63,27 @@ design defect and terms that cannot change a result.
 | Initiator: held confirmations (reply, rejection, timeout); rejected read request; late data of a rejected request; read reply ending after the Header CRC | TC-IN-03, 04 and 05 extended |
 | Register file: unused fourth word of a window | TC-MB-02 extended |
 | Packet demultiplexer: non-RMAP packet of two characters at a node without user port | TC-CO-06 extended |
+| Target: backpressure of the data buffer of the AXI master, which holds at most three chunks and never fills with chunks of 32 bytes | Configuration `chunk128` of TC-TG-14 (`ChunkBytes_g` = 128) |
 | Terms that cannot change a result: `Passthrough_g` in the event of a discarded packet; the ready signal inside the branch of the confirmation selection that is only reached when it is set; read-modify-write in the single-address checks (its command code has the increment bit set) and in the status of an externally rejected command (authorised in RmwExt_s); the command kind of an early EOP after an external rejection (only a write has data); a double error in a discarded word; the header status and the external rejection in the status of a completed write | Removed from the design |
 
 The remaining condition and expression misses fall into three groups, none of them behaviour without a test:
 
 - Terms masked by construction: the EDAC flags of a buffer are defined only together with its valid signal
-  (`omap_target_ctrl.vhd` lines 706 and 707, `omap_target_mem.vhd` lines 259 and 260); a confirmation source keeps its
-  valid signal until its handshake (`omap_initiator.vhd` lines 298 and 299); a lookup never relates a reply to an
-  expired entry (`omap_initiator_tt.vhd` line 142); the channel of an injection command is never negative
-  (`omap_mib.vhd` line 287); the end of the packet is presented only when no data byte is pending (`omap_target_rx.vhd`
-  line 287).
+  (`omap_target_ctrl.vhd` lines 711 and 712, `omap_target_mem.vhd` lines 192, 208 and 209); the byte count of a write
+  command is not zero outside the write data state (`omap_target_ctrl.vhd` line 244); a read-modify-write writes at
+  most four bytes into the empty data buffer of the AXI master, which therefore never holds them back (line 616); a
+  confirmation source keeps its valid signal until its handshake (`omap_initiator.vhd` lines 298 and 299); a lookup
+  never relates a reply to an expired entry (`omap_initiator_tt.vhd` line 142); the channel of an injection command
+  is never negative (`omap_mib.vhd` line 287); the end of the packet is presented only when no data byte is pending
+  (`omap_target_rx.vhd` line 287).
 - Gaps of an input stream in the cycle of a particular character: a gap before the end marker of a discarded packet
   (`omap_core_demux.vhd` line 269, `omap_initiator_rx.vhd` line 294). The handshakes themselves are covered with gaps
   and backpressure in the stress tests.
 - Coincidences with the memory interface: the memory interface still busy, or a memory command still pending, when the
-  last byte of a read, a read-modify-write or a write has been transferred (`omap_target_ctrl.vhd` lines 242, 431, 500,
-  586, 617 and 682, `omap_target_mem.vhd` lines 174, 213, 222, 226 and 255). The AXI master is idle when the last byte
-  has passed it in every test, also with 90 % backpressure of the memory; the conditions are the safe order of the
-  completion and are kept.
+  last byte of a read, a read-modify-write or a write has been transferred (`omap_target_ctrl.vhd` lines 433, 502, 588
+  and 619); a read byte with a double error held back by the reply encoder (`omap_target_mem.vhd` line 192). The AXI
+  master is idle when the last byte has passed it in every test, also with 90 % backpressure of the memory; the
+  conditions are the safe order of the completion and are kept.
 
 ## 4. Remaining misses
 

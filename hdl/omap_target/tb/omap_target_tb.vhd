@@ -45,7 +45,8 @@ entity omap_target_tb is
         runner_cfg     : string;
         AxiDataWidth_g : positive := 32;
         Windows_g      : natural  := 4;
-        ExtAuth_g      : boolean  := false
+        ExtAuth_g      : boolean  := false;
+        ChunkBytes_g   : positive := 32
     );
 end entity;
 
@@ -620,6 +621,20 @@ begin
                 finish(1, "early EOP, slow memory");
                 checkMem(16#400#, tbBytes(64, 9), "complete chunks written, slow memory");
                 check_value(Mem_v.bytesWritten(0), 64, error, "64 bytes written, slow memory");
+                -- Early EOP at a chunk boundary while the memory still writes earlier chunks: all chunks written
+                Mem_v.setStall(0, 90);
+                Cmd_v := tbCmd(x"6C", 16#400#, 400);
+
+                for n in 3 to 11 loop
+                    Mem_v.fill(0, 16#400#, 400, 200);
+                    Mem_v.clearStats(0);
+                    send(tbHead(tbCommand(Cmd_v, tbBytes(400, 9)), 16 + 32 * n));
+                    expect(tbWriteReply(Cmd_v, StatusEarlyEop_c), "early EOP at a chunk boundary");
+                    finish(1, "early EOP at a chunk boundary");
+                    checkMem(16#400#, tbBytes(32 * n, 9), "chunks written, early EOP at a chunk boundary");
+                    check_value(Mem_v.bytesWritten(0), 32 * n, error, "bytes written, early EOP at a chunk boundary");
+                end loop;
+
                 Mem_v.setStall(0, 0);
                 -- EEP after 40 data bytes: one chunk written
                 Mem_v.fill(0, 16#600#, 100, 50);
@@ -952,7 +967,8 @@ begin
         generic map (
             AxiDataWidth_g => AxiDataWidth_g,
             Windows_g      => Windows_g,
-            ExtAuth_g      => ExtAuth_g
+            ExtAuth_g      => ExtAuth_g,
+            ChunkBytes_g   => ChunkBytes_g
         )
         port map (
             Clk => Clk,
