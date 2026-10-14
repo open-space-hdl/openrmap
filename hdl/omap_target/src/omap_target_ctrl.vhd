@@ -207,6 +207,7 @@ begin
         variable Size_v   : unsigned(23 downto 0);
         variable Push_v   : boolean;
         variable PumpOk_v : boolean;
+        variable Drain_v  : boolean;
         variable Ack_v    : boolean;
     begin
         v           := r;
@@ -679,7 +680,10 @@ begin
             MemWr_Valid <= FifoOut_Valid when r.Pump /= 0 and r.Fsm = WrData_s else '0';
             MemWr_Data  <= FifoOut_Data;
         end if;
-        FifoOut_Ready <= '1' when PumpOk_v or (r.Drain = '1' and r.Pump = 0 and r.Fsm = WrData_s) else '0';
+        -- Bytes that are not committed are discarded after the committed bytes, also those of a command the memory
+        -- access block has not accepted yet
+        Drain_v       := r.Drain = '1' and r.CmdPend = '0' and r.Pump = 0 and r.Fsm = WrData_s;
+        FifoOut_Ready <= '1' when PumpOk_v or Drain_v else '0';
 
         r_next <= v;
     end process;

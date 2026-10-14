@@ -71,9 +71,9 @@ The write buffer is an `olo_ft_fifo_sync` of `BufferBytes_g` bytes. `Received` c
 that many bytes are in the buffer and not committed; the remainder is issued when the last byte of the Data Length is
 received. A non-verified write commits from the start, a verified write only after the end of the packet when the
 Data CRC is correct and there is no excess data. After an early EOP or an EEP no further chunk is committed and the
-uncommitted bytes are discarded from the buffer. The bytes of a chunk are passed to the memory access block after its
-command has been accepted. A single-address write commits chunks that are multiples of the memory word
-(`ChunkBytes_g` is a multiple of it).
+uncommitted bytes are discarded from the buffer once every committed byte has been passed on. The bytes of a chunk are
+passed to the memory access block after its command has been accepted. A single-address write commits chunks that are
+multiples of the memory word (`ChunkBytes_g` is a multiple of it).
 
 The command completes when the end of the packet is known, every committed byte has left the buffer, the buffer is
 empty and the memory access block is idle. A memory error, or a double error of the buffer, then gives status 1 if no
