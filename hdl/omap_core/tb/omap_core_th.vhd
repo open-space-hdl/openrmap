@@ -151,7 +151,12 @@ begin
         signal RepDataLast  : std_logic;
         signal RepDataValid : std_logic;
         signal RepDataReady : std_logic;
+        signal ReqTgtLen    : std_logic_vector(4 downto 0);
+        signal ReqRepLen    : std_logic_vector(3 downto 0);
     begin
+
+        ReqTgtLen <= std_logic_vector(to_unsigned(Req(c).TgtAddrLen, 5));
+        ReqRepLen <= std_logic_vector(to_unsigned(Req(c).ReplyAddrLen, 4));
 
         i_core : entity work.omap_core
             generic map (
@@ -263,11 +268,11 @@ begin
                 S_Req_Ready        => ReqReady(c),
                 S_Req_Code         => Req(c).Code,
                 S_Req_TgtAddr      => Req(c).TgtAddr,
-                S_Req_TgtAddrLen   => std_logic_vector(to_unsigned(Req(c).TgtAddrLen, 5)),
+                S_Req_TgtAddrLen   => ReqTgtLen,
                 S_Req_Tla          => Req(c).Tla,
                 S_Req_Key          => Req(c).Key,
                 S_Req_ReplyAddr    => Req(c).ReplyAddr,
-                S_Req_ReplyAddrLen => std_logic_vector(to_unsigned(Req(c).ReplyAddrLen, 4)),
+                S_Req_ReplyAddrLen => ReqRepLen,
                 S_Req_Ila          => Req(c).Ila,
                 S_Req_Tid          => Req(c).Tid,
                 S_Req_Addr         => Req(c).Addr,

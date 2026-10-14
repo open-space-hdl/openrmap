@@ -82,6 +82,8 @@ architecture sim of omap_initiator_th is
     signal EvtTimeout   : std_logic;
     signal EvtTidBusy   : std_logic;
     signal StatOpen     : std_logic_vector(7 downto 0);
+    signal ReqTgtLen    : std_logic_vector(4 downto 0);
+    signal ReqRepLen    : std_logic_vector(3 downto 0);
 
 begin
 
@@ -90,6 +92,9 @@ begin
     Clk_i    <= not Clk_i after 5 ns;
     Clk      <= Clk_i;
     ReqReady <= ReqReady_i;
+
+    ReqTgtLen <= std_logic_vector(to_unsigned(Req.TgtAddrLen, 5));
+    ReqRepLen <= std_logic_vector(to_unsigned(Req.ReplyAddrLen, 4));
 
     i_dut : entity work.omap_initiator
         generic map (
@@ -105,11 +110,11 @@ begin
             S_Req_Ready        => ReqReady_i,
             S_Req_Code         => Req.Code,
             S_Req_TgtAddr      => Req.TgtAddr,
-            S_Req_TgtAddrLen   => std_logic_vector(to_unsigned(Req.TgtAddrLen, 5)),
+            S_Req_TgtAddrLen   => ReqTgtLen,
             S_Req_Tla          => Req.Tla,
             S_Req_Key          => Req.Key,
             S_Req_ReplyAddr    => Req.ReplyAddr,
-            S_Req_ReplyAddrLen => std_logic_vector(to_unsigned(Req.ReplyAddrLen, 4)),
+            S_Req_ReplyAddrLen => ReqRepLen,
             S_Req_Ila          => Req.Ila,
             S_Req_Tid          => Req.Tid,
             S_Req_Addr         => Req.Addr,
