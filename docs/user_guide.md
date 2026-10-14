@@ -11,7 +11,7 @@ product characteristics of ECSS-E-ST-50-52C clause 5.8. The architecture is desc
 | Library | Sources | Order |
 | --- | --- | --- |
 | `olo` | Open Logic areas `base`, `axi` and `ft` of the submodule `open-logic/` | `open-logic/compile_order.txt` |
-| `openrmap` | `hdl/<module>/src/*.vhd` of every module of `component_list.txt` | Modules in the order of `component_list.txt`; within a module packages first (`omap_pkg.vhd`, `omap_regs_pkg.vhd`) |
+| `openrmap` | `hdl/<module>/src/*.vhd` of every module of `component_list.txt` | `compile_order.txt`: the modules in the order of `component_list.txt`, within a module packages first |
 
 All sources are VHDL-2008 and contain no vendor primitive. `tools/synth_vivado.py` shows a complete source list and
 the clock constraint for AMD Vivado.
@@ -254,5 +254,6 @@ python lint/lint.py                         # VSG
 python lint/synth_check.py                  # synthesizability of three node types with GHDL
 python tools/compliance.py --check          # ECSS traceability
 python tools/regmap.py --check              # generated register map up to date
+python run.py --compile-order               # compile_order.txt of the synthesis sources
 python tools/synth_vivado.py --part <part>  # resources and timing with AMD Vivado
 ```

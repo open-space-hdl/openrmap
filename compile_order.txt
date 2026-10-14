@@ -1,0 +1,16 @@
+hdl/omap_pkg/src/omap_regs_pkg.vhd
+hdl/omap_pkg/src/omap_pkg.vhd
+hdl/omap_target/src/omap_target_mem.vhd
+hdl/omap_target/src/omap_target_tx.vhd
+hdl/omap_target/src/omap_target_rx.vhd
+hdl/omap_target/src/omap_target_ctrl.vhd
+hdl/omap_target/src/omap_target_auth.vhd
+hdl/omap_target/src/omap_target.vhd
+hdl/omap_initiator/src/omap_initiator_tx.vhd
+hdl/omap_initiator/src/omap_initiator_tt.vhd
+hdl/omap_initiator/src/omap_initiator_rx.vhd
+hdl/omap_initiator/src/omap_initiator.vhd
+hdl/omap_mib/src/omap_mib.vhd
+hdl/omap_core/src/omap_core_mux.vhd
+hdl/omap_core/src/omap_core_demux.vhd
+hdl/omap_core/src/omap_core.vhd
