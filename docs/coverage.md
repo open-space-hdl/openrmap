@@ -27,7 +27,7 @@ Closure rules:
 
 ## 2. Result
 
-Run on 2026-10-14: 52 tests, all passed, 11 minutes. Numbers are covered/total bins per
+Run on 2026-10-15: 58 tests, all passed, 15 minutes. Numbers are covered/total bins per
 file; bold marks a metric with misses.
 
 | File | Statements | Branches | FSM States | FSM Transitions | Conditions | Expressions |
