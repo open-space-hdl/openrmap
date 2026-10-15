@@ -15,7 +15,7 @@ buffers use the fault-tolerant entities of [Open Logic](https://github.com/open-
 hardware yet and has no flight heritage; see [what the levels mean](https://openspacehdl.org/trl/) and the next
 steps in the [roadmap](docs/roadmap.md#technology-readiness).
 
-The core is complete and verified in simulation (GHDL and QuestaSim, 50 test cases at unit and core level, statement,
+The core is complete and verified in simulation (GHDL and QuestaSim, 46 test cases at unit and core level, statement,
 branch and state machine coverage closed, see [docs/coverage.md](docs/coverage.md)); the
 [compliance matrix](docs/compliance.md) traces every ECSS clause in scope to its requirements and test cases. Two cores
 access each other's memory through a packet network model, pass packets of other protocols, report injected network

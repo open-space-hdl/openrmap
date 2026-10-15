@@ -46,7 +46,8 @@ entity omap_target_tb is
         AxiDataWidth_g : positive := 32;
         Windows_g      : natural  := 4;
         ExtAuth_g      : boolean  := false;
-        ChunkBytes_g   : positive := 32
+        ChunkBytes_g   : positive := 32;
+        AxiMaxBeats_g  : positive := 16
     );
 end entity;
 
@@ -182,6 +183,14 @@ begin
             finish(1, msg);
             checkInd(status, instr(InstrReply_c), msg);
         end procedure;
+
+        -- Start offset and length of a command in a message
+        function place (
+            offset : natural;
+            n      : natural) return string is
+        begin
+            return " at offset " & to_string(offset) & ", " & to_string(n) & " bytes";
+        end function;
 
         -- Read command; checks the reply with the memory content
         procedure readCmd (
@@ -927,6 +936,62 @@ begin
                 writeCmd(x"7C", 16#F00#, tbBytes(16, 5), x"00", "write after the resets");
                 checkMem(16#F00#, tbBytes(16, 5), "write after the resets");
 
+            elsif run("test_burst_split") then
+                -- TC-TG-17: commands the AXI master splits into transactions of AxiMaxBeats_g beats, at every start
+                -- offset of a memory word, up to two transactions and one word more
+                Mem_v.fill(0, 0, 4096, 11);
+
+                for a in 0 to Word_c - 1 loop
+
+                    for n in 1 to (2 * AxiMaxBeats_g + 1) * Word_c + 1 loop
+                        readCmd(x"4C", 16#100# + a, n, memBytes(16#100# + a, n), "read" & place(a, n));
+                    end loop;
+
+                end loop;
+
+                -- Exactly the addressed bytes written; the bytes around them keep the pattern 200 + i from 0x800
+                for a in 0 to Word_c - 1 loop
+
+                    for n in 1 to (2 * AxiMaxBeats_g + 1) * Word_c + 1 loop
+                        Mem_v.fill(0, 16#800#, 512, 200);
+                        Mem_v.clearStats(0);
+                        writeCmd(x"6C", 16#900# + a, tbBytes(n, a + n), x"00", "write" & place(a, n));
+                        checkMem(16#800#, tbBytes(16#100# + a, 200), "bytes before the write" & place(a, n));
+                        checkMem(16#900# + a, tbBytes(n, a + n), "written bytes" & place(a, n));
+                        checkMem(16#900# + a + n, tbBytes(16#100# - a - n, 200 + 16#100# + a + n),
+                                 "bytes after the write" & place(a, n));
+                        check_value(Mem_v.lowestWritten(0), 16#900# + a, error, "lowest address written" & place(a, n));
+                        check_value(Mem_v.highestWritten(0), 16#900# + a + n - 1, error,
+                                    "highest address written" & place(a, n));
+                    end loop;
+
+                end loop;
+
+                -- Read-modify-write of 1 to 4 bytes, across a word boundary at the last offsets
+                for a in 0 to Word_c - 1 loop
+
+                    for n in 1 to 4 loop
+                        Addr_v                 := 16#C00# + 16#40# * a + 16#10# * n + a;
+                        Old_v(0 to n - 1)      := memBytes(Addr_v, n);
+                        Cmd_v                  := tbCmd(InstrRmw_c, Addr_v, 2 * n, 500 + n);
+                        Data_v(0 to 2 * n - 1) := tbCat(tbBytes(n, 16#5A#), tbBytes(n, 16#0F#));
+                        send(tbCommand(Cmd_v, Data_v(0 to 2 * n - 1)));
+                        expect(tbReadReply(Cmd_v, x"00", n, Old_v(0 to n - 1)), "read-modify-write reply" & place(a, n));
+                        finish(1, "read-modify-write" & place(a, n));
+                        checkInd(x"00", '1', "read-modify-write" & place(a, n));
+
+                        for i in 0 to n - 1 loop
+                            Exp_v := (Data_v(n + i) and Data_v(i)) or (not Data_v(n + i) and Old_v(i));
+                            check_value(Mem_v.read8(0, Addr_v + i), Exp_v, error,
+                                        "modified byte " & to_string(i) & place(a, n));
+                        end loop;
+
+                        checkMem(Addr_v - Word_c, tbBytes(Word_c, 11 + Addr_v - Word_c), "word before" & place(a, n));
+                        checkMem(Addr_v + n, tbBytes(Word_c, 11 + Addr_v + n), "word after" & place(a, n));
+                    end loop;
+
+                end loop;
+
             elsif run("test_ecc") then
                 -- TC-TG-15: errors in the data buffers
                 inject("001", '0');
@@ -968,7 +1033,8 @@ begin
             AxiDataWidth_g => AxiDataWidth_g,
             Windows_g      => Windows_g,
             ExtAuth_g      => ExtAuth_g,
-            ChunkBytes_g   => ChunkBytes_g
+            ChunkBytes_g   => ChunkBytes_g,
+            AxiMaxBeats_g  => AxiMaxBeats_g
         )
         port map (
             Clk => Clk,
