@@ -39,7 +39,7 @@ package omap_target_tb_pkg is
         DefLaEn    : std_logic;
         Key        : std_logic_vector(7 downto 0);
         KeyEn      : std_logic;
-        Win        : WinCfgArray_t(0 to 3);
+        Win        : WinCfgArray_t(0 to WinMax_c - 1);
         AuthAccept : std_logic;
         AuthDelay  : natural;
         ErrInj     : std_logic_vector(2 downto 0);

@@ -267,7 +267,7 @@ begin
                 S_Req_Valid        => Req(c).Valid,
                 S_Req_Ready        => ReqReady(c),
                 S_Req_Code         => Req(c).Code,
-                S_Req_TgtAddr      => Req(c).TgtAddr,
+                S_Req_TgtAddr      => Req(c).TgtAddr(63 downto 0),
                 S_Req_TgtAddrLen   => ReqTgtLen,
                 S_Req_Tla          => Req(c).Tla,
                 S_Req_Key          => Req(c).Key,

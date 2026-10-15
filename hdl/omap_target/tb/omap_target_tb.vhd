@@ -43,7 +43,9 @@ library work;
 entity omap_target_tb is
     generic (
         runner_cfg     : string;
+        AxiAddrWidth_g : positive := 32;
         AxiDataWidth_g : positive := 32;
+        BufferBytes_g  : positive := 256;
         Windows_g      : natural  := 4;
         ExtAuth_g      : boolean  := false;
         ChunkBytes_g   : positive := 32;
@@ -80,6 +82,9 @@ begin
         variable Lat_v   : natural;
         variable Cyc_v   : integer_vector(1 to 2);
         variable Cyc2_v  : integer_vector(1 to 2);
+
+        -- Lengths at the end of a 12-bit address space
+        constant SpaceLen_c : integer_vector := (1023, 1024, 4095, 4096);
 
         -- Memory latencies of the rate and timing tests
         constant RateLat_c : integer_vector := (0, 20, 40, 80);
@@ -1148,6 +1153,99 @@ begin
                                 atLat(Lat_v, 4));
                 end loop;
 
+            elsif run("test_addr_width") then
+                -- TC-TG-20: accesses at the ends of the address space; at 12 bits longer than one command of the
+                -- memory master (1020 bytes at 32 bits, 2047 at 8 bits)
+                if AxiAddrWidth_g = 12 then
+                    Mem_v.fill(0, 0, 4096, 9);
+
+                    for k in SpaceLen_c'range loop
+                        Len_v := SpaceLen_c(k);
+                        Mem_v.clearStats(0);
+                        readCmd(x"4C", 0, Len_v, memBytes(0, Len_v), "read of " & to_string(Len_v) & " bytes");
+                        check_value(Mem_v.beatsRead(0), (Len_v + Word_c - 1) / Word_c, error,
+                                    "beats read for " & to_string(Len_v) & " bytes");
+                        Mem_v.clearStats(0);
+                        writeCmd(x"6C", 0, tbBytes(Len_v, k), x"00", "write of " & to_string(Len_v) & " bytes");
+                        checkMem(0, tbBytes(Len_v, k), "write of " & to_string(Len_v) & " bytes");
+                        check_value(Mem_v.bytesWritten(0), Len_v, error, "bytes written of " & to_string(Len_v));
+                        check_value(Mem_v.lowestWritten(0), 0, error, "lowest address of " & to_string(Len_v));
+                        check_value(Mem_v.highestWritten(0), Len_v - 1, error, "highest address of " &
+                                    to_string(Len_v));
+                    end loop;
+
+                    -- Beyond the address space: status 10 without memory access (architecture D4)
+                    rejectCmd(tbCmd(x"4C", 0, 4097), tbBytes(0), StatusNotAuth_c, "read of 4097 bytes");
+                    rejectCmd(tbCmd(x"6C", 0, 4097), tbBytes(4097), StatusNotAuth_c, "write of 4097 bytes");
+                    -- Single address over the whole space: every word to and from address 0
+                    Mem_v.clearStats(0);
+                    writeCmd(x"68", 0, tbBytes(4096, 3), x"00", "single-address write of 4096 bytes");
+                    checkMem(0, tbBytes(Word_c, 3 + 4096 - Word_c), "last word at the single address");
+                    check_value(Mem_v.bytesWritten(0), 4096, error, "single-address write: bytes written");
+                    check_value(Mem_v.highestWritten(0), Word_c - 1, error, "single-address write: only the word");
+                    Mem_v.clearStats(0);
+                    Cmd_v := tbCmd(x"48", 0, 4096, 77);
+                    send(tbCommand(Cmd_v, tbBytes(0)));
+
+                    for i in 0 to 4096 / Word_c - 1 loop
+                        Data_v(i * Word_c to i * Word_c + Word_c - 1) := memBytes(0, Word_c);
+                    end loop;
+
+                    expect(tbReadReply(Cmd_v, x"00", 4096, Data_v(0 to 4095)), "single-address read of 4096 bytes");
+                    finish(1, "single-address read of 4096 bytes");
+                    check_value(Mem_v.beatsRead(0), 4096 / Word_c, error, "single-address read: beats read");
+                    -- Error response in the second command of a split read: header with status 0, all data, EEP
+                    Addr_v := 1500 when Word_c > 1 else 2100;
+                    Mem_v.setReadError(0, Addr_v, Addr_v + 3);
+                    Cmd_v  := tbCmd(x"4C", 0, 2560, 78);
+                    send(tbCommand(Cmd_v, tbBytes(0)));
+                    expect(tbReadReply(Cmd_v, x"00", 2560, memBytes(0, 2560), noCrc => true),
+                           "split read with an error in its second command", eep => true);
+                    finish(1, "split read with an error");
+                    checkInd(StatusGeneral_c, '1', "split read with an error");
+                    Mem_v.setReadError(0, 1, 0);
+                else
+                    -- Top of a 40-bit address space
+                    Cmd_v       := tbCmd(x"6C", 0, 16, 79);
+                    Cmd_v.Ext   := x"FF";
+                    Cmd_v.Addr  := x"FFFFFFF0";
+                    send(tbCommand(Cmd_v, tbBytes(16, 5)));
+                    expect(tbWriteReply(Cmd_v, x"00"), "write at the top of the address space");
+                    finish(1, "write at the top of the address space");
+                    Cmd_v.Instr := x"4C";
+                    send(tbCommand(Cmd_v, tbBytes(0)));
+                    expect(tbReadReply(Cmd_v, x"00", 16, tbBytes(16, 5)), "read at the top of the address space");
+                    finish(1, "read at the top of the address space");
+                end if;
+
+            elsif run("test_windows") then
+
+                -- TC-TG-21: every address window of the configuration bounds the accesses (window w from
+                -- 0x1000 (w + 1) to 0x1000 (w + 1) + 0xFF); without windows every access passes
+                for w in 0 to WinMax_c - 1 loop
+                    Cfg.Win(w) <= tbWin("11000", std_logic_vector(to_unsigned(16#1000# * (w + 1), 40)),
+                                        std_logic_vector(to_unsigned(16#1000# * (w + 1) + 16#FF#, 40)));
+                end loop;
+
+                wait until rising_edge(Clk);
+
+                for w in 0 to WinMax_c - 1 loop
+                    Addr_v := 16#1000# * (w + 1);
+                    if w < Windows_g then
+                        writeCmd(x"6C", Addr_v, tbBytes(4, w), x"00", "start of window " & to_string(w));
+                        writeCmd(x"6C", Addr_v + 16#FC#, tbBytes(4, w), x"00", "end of window " & to_string(w));
+                        rejectCmd(tbCmd(x"6C", Addr_v - 1, 2), tbBytes(2), StatusNotAuth_c,
+                                  "across the start of window " & to_string(w));
+                        rejectCmd(tbCmd(x"4C", Addr_v + 16#FF#, 2), tbBytes(0), StatusNotAuth_c,
+                                  "across the end of window " & to_string(w));
+                    elsif Windows_g = 0 then
+                        writeCmd(x"6C", Addr_v - 1, tbBytes(2, w), x"00", "no windows " & to_string(w));
+                    else
+                        rejectCmd(tbCmd(x"6C", Addr_v, 4), tbBytes(4), StatusNotAuth_c,
+                                  "window " & to_string(w) & " not configured");
+                    end if;
+                end loop;
+
             elsif run("test_ecc") then
                 -- TC-TG-15: errors in the data buffers
                 inject("001", '0');
@@ -1186,7 +1284,9 @@ begin
 
     i_th : entity work.omap_target_th
         generic map (
+            AxiAddrWidth_g => AxiAddrWidth_g,
             AxiDataWidth_g => AxiDataWidth_g,
+            BufferBytes_g  => BufferBytes_g,
             Windows_g      => Windows_g,
             ExtAuth_g      => ExtAuth_g,
             ChunkBytes_g   => ChunkBytes_g,

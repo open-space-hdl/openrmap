@@ -140,6 +140,24 @@ package omap_pkg is
     -- Number of Reply Address bytes of an instruction (ECSS Table 5-2)
     function replyAddrBytes (instr : std_logic_vector(7 downto 0)) return natural;
 
+    -- Size width of a command of the memory master of the Target: olo_axi_master_full counts the bytes of a command
+    -- in two bits fewer than the address (one fewer at 8-bit data), and a Data Length has 24 bits
+    function memSizeBits (
+        addrWidth : positive;
+        dataWidth : positive) return positive;
+
+    -- Largest command of the memory master in bytes, a whole number of memory words; longer accesses are split
+    function memMaxCmd (
+        addrWidth : positive;
+        dataWidth : positive) return positive;
+
+    -- Generics of omap_core that the declared ranges do not exclude: the empty string for a consistent
+    -- configuration, else the reason
+    function coreConfigError (
+        dataWidth   : positive;
+        bufferBytes : positive;
+        chunkBytes  : positive) return string;
+
 end package;
 
 ---------------------------------------------------------------------------------------------------
@@ -184,6 +202,45 @@ package body omap_pkg is
     function cmdCode (instr : std_logic_vector(7 downto 0)) return CmdCode_t is
     begin
         return instr(InstrWrite_c downto InstrInc_c);
+    end function;
+
+    function memSizeBits (
+        addrWidth : positive;
+        dataWidth : positive) return positive is
+    begin
+        if dataWidth = 8 then
+            return minimum(24, addrWidth - 1);
+        end if;
+        return minimum(24, addrWidth - 2);
+    end function;
+
+    function memMaxCmd (
+        addrWidth : positive;
+        dataWidth : positive) return positive is
+    begin
+        return 2 ** memSizeBits(addrWidth, dataWidth) - dataWidth / 8;
+    end function;
+
+    function coreConfigError (
+        dataWidth   : positive;
+        bufferBytes : positive;
+        chunkBytes  : positive) return string is
+        variable Pow_v : positive := 8;
+    begin
+
+        while Pow_v < dataWidth and Pow_v < 1024 loop
+            Pow_v := 2 * Pow_v;
+        end loop;
+
+        if Pow_v /= dataWidth then
+            return "AxiDataWidth_g must be a power of 2 from 8 to 1024";
+        elsif chunkBytes > bufferBytes then
+            return "ChunkBytes_g must not be larger than BufferBytes_g";
+        elsif chunkBytes mod (dataWidth / 8) /= 0 then
+            -- A single-address write moves whole memory words
+            return "ChunkBytes_g must be a multiple of AxiDataWidth_g/8";
+        end if;
+        return "";
     end function;
 
     function replyAddrBytes (instr : std_logic_vector(7 downto 0)) return natural is

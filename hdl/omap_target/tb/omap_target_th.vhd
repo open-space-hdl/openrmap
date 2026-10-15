@@ -31,6 +31,7 @@ library work;
 ---------------------------------------------------------------------------------------------------
 entity omap_target_th is
     generic (
+        AxiAddrWidth_g : positive := 32;
         AxiDataWidth_g : positive := 32;
         Windows_g      : natural  := 4;
         ExtAuth_g      : boolean  := false;
@@ -89,7 +90,7 @@ architecture sim of omap_target_th is
     signal EccSec     : std_logic_vector(2 downto 0);
     signal EccDed     : std_logic_vector(2 downto 0);
 
-    signal AwAddr  : std_logic_vector(31 downto 0);
+    signal AwAddr  : std_logic_vector(AxiAddrWidth_g - 1 downto 0);
     signal AwLen   : std_logic_vector(7 downto 0);
     signal AwSize  : std_logic_vector(2 downto 0);
     signal AwBurst : std_logic_vector(1 downto 0);
@@ -103,7 +104,7 @@ architecture sim of omap_target_th is
     signal BResp   : std_logic_vector(1 downto 0);
     signal BValid  : std_logic;
     signal BReady  : std_logic;
-    signal ArAddr  : std_logic_vector(31 downto 0);
+    signal ArAddr  : std_logic_vector(AxiAddrWidth_g - 1 downto 0);
     signal ArLen   : std_logic_vector(7 downto 0);
     signal ArSize  : std_logic_vector(2 downto 0);
     signal ArBurst : std_logic_vector(1 downto 0);
@@ -124,7 +125,7 @@ begin
 
     i_dut : entity work.omap_target
         generic map (
-            AxiAddrWidth_g => 32,
+            AxiAddrWidth_g => AxiAddrWidth_g,
             AxiDataWidth_g => AxiDataWidth_g,
             AxiMaxBeats_g  => AxiMaxBeats_g,
             BufferBytes_g  => BufferBytes_g,
@@ -236,7 +237,7 @@ begin
     i_ram : entity work.omap_tb_axi_ram
         generic map (
             Index_g     => 0,
-            AddrWidth_g => 32,
+            AddrWidth_g => AxiAddrWidth_g,
             DataWidth_g => AxiDataWidth_g
         )
         port map (

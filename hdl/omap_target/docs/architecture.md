@@ -67,13 +67,15 @@ Done_s](img/omap_target_ctrl_fsm.drawio.svg)
 ### Write buffer and chunks
 
 The write buffer is an `olo_ft_fifo_sync` of `BufferBytes_g` bytes. `Received` counts the bytes written into it,
-`Committed` the bytes for which a memory write command was issued. A command of `ChunkBytes_g` bytes is issued when
-that many bytes are in the buffer and not committed; the remainder is issued when the last byte of the Data Length is
+`Committed` the bytes for which a memory write command was issued. A command of one chunk is issued when that many
+bytes are in the buffer and not committed; a chunk is `ChunkBytes_g` bytes, at most the largest command of the memory
+access block (section 5); the remainder is issued when the last byte of the Data Length is
 received. A non-verified write commits from the start, a verified write only after the end of the packet when the
 Data CRC is correct and there is no excess data. After an early EOP or an EEP no further chunk is committed and the
 uncommitted bytes are discarded from the buffer once every committed byte has been passed on. The bytes of a chunk are
 passed to the memory access block after its command has been accepted. A single-address write commits chunks that are
-multiples of the memory word (`ChunkBytes_g` is a multiple of it).
+multiples of the memory word (`ChunkBytes_g` and the largest command are multiples of it; the core checks
+`ChunkBytes_g` at elaboration).
 
 The command completes when the end of the packet is known, every committed byte has left the buffer, the buffer is
 empty and the memory access block is idle. A memory error, or a double error of the buffer, then gives status 1 if no
@@ -93,6 +95,12 @@ single-address command is split into one AXI command of one memory word per word
 `Busy` covers commands not yet issued or completed on AXI. `Err` is set by an error response on any write response or
 read beat of a command, which the master reports at the end of the command, and by a double error in a data buffer of
 the master; the controller clears it at the start of every command.
+
+A command carries at most 2^S - W bytes (W = `AxiDataWidth_g`/8, a whole number of memory words):
+`olo_axi_master_full` counts the bytes of a command in S = `AxiAddrWidth_g` - 2 bits (`AxiAddrWidth_g` - 1 at 8-bit
+data, at most 24, the width of the Data Length). The controller splits a longer read into commands of this length at
+the following addresses (at the same address for a single-address read) and issues the next one when the previous one
+is taken; the read data and a memory error are handled as for one command (D6).
 
 The master runs in its high-latency mode with data buffers of two bursts of `AxiMaxBeats_g` words; the buffers hold
 one byte per ECC word.

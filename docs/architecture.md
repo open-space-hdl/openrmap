@@ -40,7 +40,7 @@ AXI4 master and all other interfaces are AXI4-Stream and AXI4-Lite. The core run
 
 OpenRMAP is an open Remote Memory Access Protocol implementation that is based on the Open Logic VHDL Library. The
 code lives in [open-space-hdl/openrmap](https://github.com/open-space-hdl/openrmap) under the PSI HDL Library License,
-Version 1.0, the licence of Open Logic. Open Logic is pinned to the tag `4.7.0-ft.5` (1bc4fb9) of the branch
+Version 1.0, the licence of Open Logic. Open Logic is pinned to the tag `4.7.0-ft.6` (5d8ae56) of the branch
 `fault-tolerant` of open-space-hdl/open-logic-ft, the fault-tolerant fork of Open Logic.
 
 ### References
@@ -50,7 +50,7 @@ Version 1.0, the licence of Open Logic. Open Logic is pinned to the tag `4.7.0-f
 | \[ECSS\] | ECSS-E-ST-50-52C, SpaceWire: Remote memory access protocol | 5 February 2010 |
 | \[SPW\] | ECSS-E-ST-50-12C Rev.1, SpaceWire: Links, nodes, routers and networks | 15 May 2019 |
 | \[PID\] | ECSS-E-ST-50-51C, SpaceWire protocol identification | 5 February 2010 |
-| \[OLO\] | [Open Logic, fault-tolerant fork, branch fault-tolerant](https://github.com/open-space-hdl/open-logic-ft/tree/fault-tolerant) | 4.7.0-ft.5 (1bc4fb9) |
+| \[OLO\] | [Open Logic, fault-tolerant fork, branch fault-tolerant](https://github.com/open-space-hdl/open-logic-ft/tree/fault-tolerant) | 4.7.0-ft.6 (5d8ae56) |
 
 ### Conventions
 
@@ -158,7 +158,7 @@ replies, commands and user packets into the transmitted packet stream without in
 | D3 | The Target executes one command at a time: decode, authorise, access, reply | RMAP over SpaceWire is limited by the link rate; sequential execution keeps the status of every command exact and makes read-modify-write atomic for RMAP |
 | D4 | The Target memory is accessed through `olo_ft_axi_master_full` with byte addresses: the first data byte of a command is at the lowest address (little-endian byte lanes), the RMAP address bits above the AXI address width must be zero | Byte-exact unaligned accesses of any length without own alignment logic; ECC on the data buffers |
 | D5 | Write data passes through one FT buffer: a verified write is buffered completely and written after the Data CRC and the end of the packet are checked; a non-verified write is committed in chunks of `ChunkBytes_g` bytes that are complete in the buffer | Verified writes as ECSS 5.3.3.6.4 requires; non-verified writes stream (ECSS 5.3.3.6.9), and an early EOP or EEP leaves the incomplete chunk, which contains the Data CRC, unwritten |
-| D6 | A read reply is streamed: the header with status 0 is sent when the memory read starts, the data follows as it is read, a memory error ends the reply with an EEP | No buffer for read data; ECSS 5.4.3.10c.1 |
+| D6 | A read reply is streamed: the header with status 0 is sent when the memory read starts, the data follows as it is read, a memory error ends the reply with an EEP. A read longer than one command of the memory master is split into several commands | No buffer for read data; ECSS 5.4.3.10c.1 |
 | D7 | A single-address access (increment bit clear) accesses one Word repeatedly: the address must be aligned to the Word and the length must be a multiple of it | The memory location width is chosen by the Target (ECSS 5.3.3.6.14 note); FIFOs and registers behind AXI are Word wide |
 | D8 | Authorisation by two logical addresses and the default address 0xFE, a key, `Windows_g` address windows with read, write, verified-only write, read-modify-write and single-address permissions, and an optional external authorisation port | The Target user application of ECSS 5.3.3.5 in hardware; windows protect memory without software |
 | D9 | One priority of the status codes: header checks (2, 12, 3, 11, 9, 10) before packet end errors (7, 5, 6), Data CRC (4), external authorisation (10) and memory errors (1) | ECSS 5.6.1d leaves the choice to the application; a fixed order makes the reply deterministic and testable |

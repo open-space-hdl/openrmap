@@ -1,8 +1,8 @@
 hdl/omap_pkg/src/omap_regs_pkg.vhd
 hdl/omap_pkg/src/omap_pkg.vhd
-hdl/omap_target/src/omap_target_mem.vhd
 hdl/omap_target/src/omap_target_tx.vhd
 hdl/omap_target/src/omap_target_rx.vhd
+hdl/omap_target/src/omap_target_mem.vhd
 hdl/omap_target/src/omap_target_ctrl.vhd
 hdl/omap_target/src/omap_target_auth.vhd
 hdl/omap_target/src/omap_target.vhd

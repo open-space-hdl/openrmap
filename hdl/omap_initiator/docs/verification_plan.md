@@ -13,8 +13,9 @@ the events are checked.
 | --- | --- | --- |
 | `omap_initiator_tb` | `omap_initiator_th` | `omap_initiator` at 100 MHz (`TgtAddrBytes_g` 8, `Transactions_g` 4, tick 100 ns), request descriptor driven by the sequencer, AXI4-Stream VVCs on the write data, the commands, the replies and the reply data, a monitor logging the confirmations and counting the events |
 
-VUnit configuration `no_table` (`Transactions_g` = 0) for TC-IN-06. For TC-IN-08 the harness can drop the
-characters of the data VVC and take and drop the commands. Simulator: GHDL.
+VUnit configurations `no_table` (`Transactions_g` = 0) for TC-IN-06; `path0_table0`, `path1_table1`,
+`path8_table8` and `path16_table64` (`TgtAddrBytes_g` and `Transactions_g`) for TC-IN-10. For TC-IN-08 the harness
+can drop the characters of the data VVC and take and drop the commands. Simulator: GHDL.
 
 ## 3. Test cases
 
@@ -29,6 +30,7 @@ characters of the data VVC and take and drop the commands. Simulator: GHDL.
 | `test_reset` (TC-IN-08) | Reset in each of the first 80 cycles of a write with Target SpaceWire Address and data, of a rejected request held by the user and of a request waiting for a free entry; a write every 10 resets and a read with reply at the end are executed normally | IN-IF-05 |
 | `test_stress` (TC-IN-07) | Random backpressure and gaps on all four streams, 30 writes and reads with replies interleaved, Reply Addresses of 0 to 8 bytes | IN-IF-01, IN-IF-02, IN-IF-03 |
 | `test_timing` (TC-IN-09) | Clock cycles of write and read commands of 0 to 300 bytes from the request, of a write with a Target SpaceWire Address and a Reply Address of 4 bytes each, of writes without reply back to back (period from 5 and 10 requests), of write and read replies, the read data and the confirmations | IN-PF-01, IN-PF-02 |
+| `test_sizes` (TC-IN-10) | A command with a Target SpaceWire Address of `TgtAddrBytes_g` bytes and a Reply Address of 12 bytes; `Transactions_g` reads with reply fill the table, a further request is taken but its command waits until a reply frees an entry; without table three reads are sent at once; every read confirmed | IN-TX-01, IN-TT-01, IN-TT-04 |
 
 ## 4. Requirement coverage
 
@@ -38,12 +40,12 @@ characters of the data VVC and take and drop the commands. Simulator: GHDL.
 | IN-IF-03 | TC-IN-02, TC-IN-07 |
 | IN-IF-04 | TC-IN-03, TC-IN-04 |
 | IN-IF-05 | TC-IN-08 |
-| IN-TX-01 to IN-TX-03 | TC-IN-01 |
+| IN-TX-01 to IN-TX-03 | TC-IN-01, TC-IN-10 |
 | IN-RX-01 | TC-IN-02 |
 | IN-RX-02, IN-RX-03 | TC-IN-03 |
 | IN-RX-04 | TC-IN-02, TC-IN-03 |
-| IN-TT-01 | TC-IN-02, TC-IN-04, TC-IN-05 |
+| IN-TT-01 | TC-IN-02, TC-IN-04, TC-IN-05, TC-IN-10 |
 | IN-TT-02 | TC-IN-04 |
 | IN-TT-03 | TC-IN-05 |
-| IN-TT-04 | TC-IN-06 |
+| IN-TT-04 | TC-IN-06, TC-IN-10 |
 | IN-PF-01, IN-PF-02 | TC-IN-09 |

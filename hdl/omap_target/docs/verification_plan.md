@@ -19,7 +19,10 @@ VUnit configurations: `windows4` and `windows0` (four and no address windows) fo
 `AxiMaxBeats_g` 1 to 4) and `axi64_beats7`, `axi64_beats8` (64-bit AXI bus, `AxiMaxBeats_g` 7 and 8, `ChunkBytes_g`
 128) for TC-TG-17: bursts shorter than the memory word in bytes and the next length; `b16`, `b1`, `b4` (bursts of 16,
 1 and 4 beats), `c128` (`ChunkBytes_g` 128) and `w64_b2` (64-bit AXI bus, bursts of 2 beats) for TC-TG-18; `axi32`,
-`axi64` and `c128` for TC-TG-19. All other tests run with four windows, a 32-bit AXI bus, bursts of 16 beats and no
+`axi64` and `c128` for TC-TG-19; `axi8`, `axi16`, `axi128`, `axi256`, `axi512` and `axi1024` (the other data
+widths, `BufferBytes_g` 512, `ChunkBytes_g` one memory word at 512 and 1024 bits) for TC-TG-02, 03 and 04; `addr12`,
+`addr12_axi8`, `addr12_c2048` (`BufferBytes_g` 4096, `ChunkBytes_g` 2048) and `addr40` for TC-TG-20; `windows0` to
+`windows8` for TC-TG-21. All other tests run with four windows, a 32-bit AXI bus, bursts of 16 beats and no
 external authorisation. Simulator: GHDL.
 
 ## 3. Test cases
@@ -45,12 +48,14 @@ external authorisation. Simulator: GHDL.
 | `test_burst_split` (TC-TG-17) | Commands that the AXI master splits into transactions of `AxiMaxBeats_g` beats, at every start offset of a memory word: incrementing reads and writes of 1 byte to two transactions and one word more, compared with the memory (writes: exactly the addressed bytes written, the bytes around them unchanged); read-modify-write of 1 to 4 bytes, across a word boundary at the last offsets | TG-EX-03, TG-EX-04, TG-EX-05 |
 | `test_rate` (TC-TG-18) | Non-verified writes and reads of 2048 and 4096 bytes with memory latencies of 0, 20, 40 and 80 cycles: the sustained rates (the difference of the two lengths) equal the rates of the user guide within 1 %; data and status checked | TG-PF-02, TG-PF-03 |
 | `test_timing` (TC-TG-19) | Clock cycles at the ports with memory latencies of 0 and 20 cycles: writes and reads of 1 to 2 `ChunkBytes_g` + 8 bytes and read-modify-writes of 1 to 4 bytes (command taken, end of command to reply, reply); reads of 16 and 256 bytes, writes of 2 and 8 chunks and read-modify-writes back to back (period from 5 and 10 commands) | TG-PF-01, TG-PF-03 |
+| `test_addr_width` (TC-TG-20) | 12-bit address space: reads and writes of 1023, 1024, 4095 and 4096 bytes from address 0, longer than one command of the memory master (data, bytes and beats of the memory, no further transaction); 4097 bytes give status 10 without memory access; single-address write and read of 4096 bytes; an error response in the second command of a split read: header with status 0, all data, EEP, indicated status 1; with 8-bit data and with chunks of 2048 bytes (cut to the largest command). 40-bit address space: write and read at its top | TG-IF-02, TG-EX-08 |
+| `test_windows` (TC-TG-21) | Every number of windows from 0 to 8: an access at the start and at the end of every window passes, one across its start or end gets status 10, a window above `Windows_g` does not exist; without windows every access passes | TG-AU-07 |
 
 ## 4. Requirement coverage
 
 | Requirement | Test cases |
 | --- | --- |
-| TG-IF-01, TG-IF-02 | TC-TG-01, TC-TG-14 |
+| TG-IF-01, TG-IF-02 | TC-TG-01, TC-TG-14, TC-TG-20 |
 | TG-IF-03 | TC-TG-07 |
 | TG-IF-04 | TC-TG-12 |
 | TG-IF-05 | TC-TG-01 |
@@ -61,7 +66,7 @@ external authorisation. Simulator: GHDL.
 | TG-RX-05 | TC-TG-01, TC-TG-10 |
 | TG-AU-01 | TC-TG-05 |
 | TG-AU-02 | TC-TG-06 |
-| TG-AU-03 to TG-AU-07 | TC-TG-07 |
+| TG-AU-03 to TG-AU-07 | TC-TG-07, TC-TG-21 |
 | TG-AU-08 | TC-TG-07, TC-TG-08, TC-TG-12 |
 | TG-EX-01 | TC-TG-02, TC-TG-08 |
 | TG-EX-02 | TC-TG-02, TC-TG-09, TC-TG-14 |
@@ -70,6 +75,7 @@ external authorisation. Simulator: GHDL.
 | TG-EX-05 | TC-TG-04, TC-TG-10, TC-TG-12, TC-TG-17 |
 | TG-EX-06 | TC-TG-11, TC-TG-15 |
 | TG-EX-07 | TC-TG-02, TC-TG-03, TC-TG-04 |
+| TG-EX-08 | TC-TG-20, TC-PKG-05 |
 | TG-TX-01 | TC-TG-01, TC-TG-02 |
 | TG-TX-02 | TC-TG-13 |
 | TG-TX-03 | TC-TG-01 |
