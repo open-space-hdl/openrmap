@@ -64,6 +64,14 @@ an AXI4 master and sends the replies on a second N-Char stream. It executes one 
 | TG-TX-03 | A write reply shall consist of the Reply SpaceWire Address, Initiator Logical Address, Protocol Identifier, Instruction with packet type 0b00 and the command and Reply Address Length of the command, Status, Target Logical Address of the command, Transaction Identifier, Header CRC and EOP. | 5.3.2, 5.1.17 |
 | TG-TX-04 | A read and a read-modify-write reply shall consist of the fields of a write reply before the Header CRC, a reserved byte 0x00, the Data Length (the length read; n for a read-modify-write), the Header CRC, the data, the Data CRC and EOP; a reply with an error status before the data has no data and a Data CRC of 0x00. | 5.4.2, 5.5.2, 5.2f |
 
+### 2.6 Performance
+
+| ID | Requirement | ECSS |
+| --- | --- | --- |
+| TG-PF-01 | The Target shall take the characters of a command at one per clock cycle with at most four further cycles per command, while its controller is free and its write buffer has room, and send the characters of a reply at one per clock cycle once their data is available. | none (performance) |
+| TG-PF-02 | The memory access shall transfer one byte per clock cycle, hold up to two read bursts in its read buffer and keep up to four write transactions open. | none (performance) |
+| TG-PF-03 | With a memory that answers in the cycle after a transaction and bursts of at least eight bytes, a non-verified write shall cost at most nine cycles per chunk in addition to one cycle per byte. | none (performance) |
+
 ## 3. Configuration parameters
 
 | Generic | Default | Range | Description |

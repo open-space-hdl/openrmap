@@ -10,15 +10,17 @@ backdoor of the AXI memory model. The CRC test patterns of ECSS Annex A.4 are pa
 
 | Testbench | Harness | DUT and environment |
 | --- | --- | --- |
-| `omap_target_tb` | `omap_target_th` | `omap_target` at 100 MHz (AXI address width 32, `AxiMaxBeats_g` 16, `BufferBytes_g` 256, `ChunkBytes_g` 32), AXI4-Stream VVCs on the command and reply streams, AXI memory model instance 0, a responder on the external authorisation port, monitors of the indications and events |
+| `omap_target_tb` | `omap_target_th` | `omap_target` at 100 MHz (AXI address width 32, `AxiMaxBeats_g` 16, `BufferBytes_g` 256, `ChunkBytes_g` 32), AXI4-Stream VVCs on the command and reply streams, AXI memory model instance 0 with adjustable latency, a responder on the external authorisation port, monitors of the indications and events |
 
 VUnit configurations: `windows4` and `windows0` (four and no address windows) for TC-TG-01; `axi32` and `axi64`
 (AXI data width 32 and 64, memory word of 4 and 8 bytes) for TC-TG-02, 03, 04 and 14; `chunk128` (`ChunkBytes_g`
 128, so that the data buffer of the AXI master fills and applies backpressure) for TC-TG-14; `ext_auth`
 (`ExtAuth_g`) for TC-TG-12 and TC-TG-16, `int_auth` for TC-TG-16; `axi32_beats1` to `axi32_beats4` (32-bit AXI bus,
 `AxiMaxBeats_g` 1 to 4) and `axi64_beats7`, `axi64_beats8` (64-bit AXI bus, `AxiMaxBeats_g` 7 and 8, `ChunkBytes_g`
-128) for TC-TG-17: bursts shorter than the memory word in bytes and the next length. All other tests run with four
-windows, a 32-bit AXI bus, bursts of 16 beats and no external authorisation. Simulator: GHDL.
+128) for TC-TG-17: bursts shorter than the memory word in bytes and the next length; `b16`, `b1`, `b4` (bursts of 16,
+1 and 4 beats), `c128` (`ChunkBytes_g` 128) and `w64_b2` (64-bit AXI bus, bursts of 2 beats) for TC-TG-18; `axi32`,
+`axi64` and `c128` for TC-TG-19. All other tests run with four windows, a 32-bit AXI bus, bursts of 16 beats and no
+external authorisation. Simulator: GHDL.
 
 ## 3. Test cases
 
@@ -41,6 +43,8 @@ windows, a 32-bit AXI bus, bursts of 16 beats and no external authorisation. Sim
 | `test_ecc` (TC-TG-15) | Single errors in the write buffer and in the write and read data of the master corrected and counted; double errors in the write buffer and in the write data of the master give status 1, in the read data of the master an EEP after the data | TG-EX-06 |
 | `test_reset` (TC-TG-16) | Reset in each of the first 140 cycles of a verified write, a non-verified write, a read with Reply Address, a read-modify-write and a rejected write (with internal and external authorisation; the harness drops the rest of the command and the replies, the memory model drops its open transactions); a read every 20 resets and a write at the end are executed normally | TG-IF-06 |
 | `test_burst_split` (TC-TG-17) | Commands that the AXI master splits into transactions of `AxiMaxBeats_g` beats, at every start offset of a memory word: incrementing reads and writes of 1 byte to two transactions and one word more, compared with the memory (writes: exactly the addressed bytes written, the bytes around them unchanged); read-modify-write of 1 to 4 bytes, across a word boundary at the last offsets | TG-EX-03, TG-EX-04, TG-EX-05 |
+| `test_rate` (TC-TG-18) | Non-verified writes and reads of 2048 and 4096 bytes with memory latencies of 0, 20, 40 and 80 cycles: the sustained rates (the difference of the two lengths) equal the rates of the user guide within 1 %; data and status checked | TG-PF-02, TG-PF-03 |
+| `test_timing` (TC-TG-19) | Clock cycles at the ports with memory latencies of 0 and 20 cycles: writes and reads of 1 to 2 `ChunkBytes_g` + 8 bytes and read-modify-writes of 1 to 4 bytes (command taken, end of command to reply, reply); reads of 16 and 256 bytes, writes of 2 and 8 chunks and read-modify-writes back to back (period from 5 and 10 commands) | TG-PF-01, TG-PF-03 |
 
 ## 4. Requirement coverage
 
@@ -70,6 +74,9 @@ windows, a 32-bit AXI bus, bursts of 16 beats and no external authorisation. Sim
 | TG-TX-02 | TC-TG-13 |
 | TG-TX-03 | TC-TG-01 |
 | TG-TX-04 | TC-TG-01, TC-TG-03, TC-TG-04 |
+| TG-PF-01 | TC-TG-19 |
+| TG-PF-02 | TC-TG-18 |
+| TG-PF-03 | TC-TG-18, TC-TG-19 |
 
 ## 5. Negative tests
 

@@ -45,6 +45,13 @@ commands.
 | IN-TT-03 | A registered command whose reply has not arrived after the configured number of ticks shall be confirmed with the local error "timeout" and removed; a timeout of zero disables it. | 4.3.1 |
 | IN-TT-04 | With `Transactions_g` = 0 every reply with an intact header shall be confirmed. | 5.3.3.9 |
 
+### 2.5 Performance
+
+| ID | Requirement | ECSS |
+| --- | --- | --- |
+| IN-PF-01 | The Initiator shall send the first character of a command at most four cycles after the request and the following characters at one per clock cycle with at most two cycles without a character per command, and take the next request with the end of packet marker of a command. | none (performance) |
+| IN-PF-02 | The Initiator shall take the characters of a reply at one per clock cycle with one further cycle per reply, pass the read data on at one byte per cycle, the last byte at most three cycles after the end of packet marker, and give the confirmation at most five cycles after the end of packet marker. | none (performance) |
+
 ## 3. Configuration parameters
 
 | Generic | Default | Range | Description |

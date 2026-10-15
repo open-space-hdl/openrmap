@@ -80,6 +80,10 @@ begin
         variable Cmd_v  : TbCmd_t;
         variable Data_v : t_slv_array(0 to 15)(7 downto 0);
         variable Conf_v : natural;
+        variable Len_v  : natural;
+        variable Cyc_v  : natural;
+
+        constant TimingLen_c : integer_vector := (0, 1, 4, 16, 33, 100, 300);
 
         procedure regWrite (
             c    : natural;
@@ -244,6 +248,71 @@ begin
             regWrite(c, RegEccSelect_c, x"00000001");
         end procedure;
 
+        -- Clock cycles per command of cnt commands of one kind (0 read, 1 write) from the user port of A to the
+        -- Target of B, back to back: time from the first command to the last indication of B
+        procedure backToBack (
+            kind : natural;
+            n    : natural;
+            cnt  : natural;
+            cyc  : out natural) is
+            variable C_v : TbCmd_t;
+            variable T_v : time;
+            variable I_v : natural;
+        begin
+            I_v := Obs(B_c).IndCnt;
+            T_v := now;
+
+            for i in 1 to cnt loop
+                if kind = 0 then
+                    C_v := tbCmd(x"4C", 16#100#, n, i);
+                    userSend(A_c, tbCommand(C_v, tbBytes(0)));
+                else
+                    C_v := tbCmd(x"6C", 16#100#, n, i);
+                    userSend(A_c, tbCommand(C_v, tbBytes(n)));
+                end if;
+            end loop;
+
+            while Obs(B_c).IndCnt < I_v + cnt loop
+                wait until rising_edge(Clk);
+            end loop;
+
+            cyc := (now - T_v) / 10 ns;
+        end procedure;
+
+        -- Period of commands back to back: the difference of 10 and 5 commands
+        procedure period (
+            kind : natural;
+            n    : natural;
+            cyc  : out natural) is
+            variable C5_v  : natural;
+            variable C10_v : natural;
+        begin
+            backToBack(kind, n, 5, C5_v);
+            backToBack(kind, n, 10, C10_v);
+            cyc := (C10_v - C5_v) / 5;
+        end procedure;
+
+        -- Length in a message
+        function bytes (n : natural) return string is
+        begin
+            return " of " & to_string(n) & " bytes";
+        end function;
+
+        -- Memory content of core m as a byte array
+        impure function memBytes (
+            m    : natural;
+            addr : natural;
+            n    : natural) return t_slv_array is
+            variable Res_v : t_slv_array(0 to n - 1)(7 downto 0);
+        begin
+
+            for i in 0 to n - 1 loop
+                Res_v(i) := Mem_v.read8(m, addr + i);
+            end loop;
+
+            return Res_v;
+        end function;
+
         procedure awaitStreams is
         begin
 
@@ -367,6 +436,47 @@ begin
                 regCheck(A_c, RegTgtCntOk_c, x"00010001", "A: one write, one read");
                 regCheck(B_c, RegIniCnt1_c, x"00020002", "B: two commands, two replies");
                 regCheck(A_c, RegIniStatus_c, x"00000000", "A: no outstanding command");
+
+            elsif run("test_timing") then
+                -- TC-CO-11: clock cycles from a request of A through the Target of B to the confirmation, and commands
+                -- back to back at the packet input of B (memory of B: 64 bit, bursts of 16 beats, chunks of 32 bytes)
+                Mem_v.fill(B_c, 0, 4096, 1);
+
+                for i in 0 to 6 loop
+                    Len_v := TimingLen_c(i);
+                    -- Write: the command is taken by B in at most n + 27 cycles, the reply of 9 characters by A in
+                    -- 14 cycles, the confirmation follows 3 cycles later
+                    Conf_v := Obs(A_c).ConfCnt;
+                    request(A_c, x"6C", 16#100#, Len_v, 1, tbBytes(Len_v));
+                    awaitConf(A_c, Conf_v + 1, "write");
+                    awaitStreams;
+                    check_value(Obs(A_c).TxLast - Obs(A_c).TxFirst + 1 <= Len_v + 27, error, "write taken by B" &
+                                bytes(Len_v));
+                    check_value(Obs(B_c).TxLast - Obs(B_c).TxFirst + 1, 14, error, "write reply taken by A" &
+                                bytes(Len_v));
+                    check_value(Obs(A_c).ConfCyc - Obs(B_c).TxLast, 3, error, "write confirmation" & bytes(Len_v));
+                    -- Read: request to confirmation in n + 63 cycles
+                    Conf_v := Obs(A_c).ConfCnt;
+                    request(A_c, x"4C", 16#100#, Len_v, 2, tbBytes(0));
+                    if Len_v > 0 then
+                        axistream_expect(AXISTREAM_VVCT, VvcCoRepData_c + A_c, memBytes(B_c, 16#100#, Len_v), "read data");
+                    end if;
+                    awaitConf(A_c, Conf_v + 1, "read");
+                    awaitStreams;
+                    if Len_v >= 4 then
+                        check_value(Obs(A_c).ConfCyc - Obs(A_c).ReqAcc, Len_v + 63, error, "read request to confirmation" &
+                                    bytes(Len_v));
+                    end if;
+                end loop;
+
+                -- Back to back from the user port of A: reads every n + 31 cycles, writes of whole chunks at most
+                -- n (C + 9) / C + C + 29 cycles
+                for i in 0 to 1 loop
+                    period(0, 16 + 240 * i, Cyc_v);
+                    check_value(Cyc_v, 16 + 240 * i + 31, error, "reads back to back" & bytes(16 + 240 * i));
+                    period(1, 64 + 192 * i, Cyc_v);
+                    check_value(Cyc_v <= (2 + 6 * i) * 41 + 32 + 29, error, "writes back to back" & bytes(64 + 192 * i));
+                end loop;
 
             elsif run("test_errors") then
                 -- TC-CO-03: faults in the network and rejected commands

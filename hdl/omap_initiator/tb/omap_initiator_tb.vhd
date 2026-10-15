@@ -68,6 +68,7 @@ begin
         variable Cmd2_v : TbCmd_t;
         variable Cnt_v  : natural;
         variable T_v    : time;
+        variable Per_v  : integer_vector(1 to 2);
 
         -- Command with the Reply Address bytes ra (padded to whole words as the Initiator does it)
         impure function withRa (
@@ -236,6 +237,25 @@ begin
             await_completion(AXISTREAM_VVCT, VvcRepData_c, 1 ms, "reply data received");
         end procedure;
 
+        -- Length in a message
+        function bytes (n : natural) return string is
+        begin
+            return " of " & to_string(n) & " bytes";
+        end function;
+
+        -- Waits for the next confirmation (counted from Cnt_v) and checks that it reports no local error
+        procedure awaitConf (msg : string) is
+        begin
+
+            for i in 0 to 20000 loop
+                exit when Obs.ConfCnt > Cnt_v;
+                wait until rising_edge(Clk);
+            end loop;
+
+            check_value(Obs.ConfCnt, Cnt_v + 1, error, msg & ": confirmation");
+            check_value(Obs.Conf(Cnt_v mod 64).Error, "00", error, msg & ": local error");
+        end procedure;
+
         -- Reply instruction of a command
         function repInstr (cmd : TbCmd_t) return std_logic_vector is
         begin
@@ -352,6 +372,84 @@ begin
                 checkConf(5, 15, x"0D", StatusNotAuth_c, 0, "00", "read reply with status 10");
                 waitIdle;
                 check_value(Obs.RepOkCnt, 6, error, "replies confirmed");
+
+            elsif run("test_timing") then
+
+                -- TC-IN-09: clock cycles of commands, replies and confirmations
+                for n in 0 to 300 loop
+                    if n <= 40 or n mod 20 = 0 then
+                        -- Write without reply: n + 18 characters, the last n + 22 cycles after the request
+                        Cmd_v := tbCmd(x"64", 16#100#, n, 100);
+                        request(Cmd_v, tbBytes(0), tbBytes(n), "write");
+                        waitIdle;
+                        check_value(Obs.CmdFirst - Obs.ReqAcc, 4, error, "write: first character" & bytes(n));
+                        check_value(Obs.CmdLast - Obs.ReqAcc, n + 22, error, "write: end of packet" & bytes(n));
+                        if n > 0 then
+                            check_value(Obs.DataLast - Obs.DataFirst + 1, n, error, "write: request data" & bytes(n));
+                        end if;
+                        -- Write with reply: the reply of 9 characters is taken in 10 cycles, the confirmation follows
+                        -- 3 cycles after its end of packet marker
+                        Cnt_v := Obs.ConfCnt;
+                        Cmd_v := tbCmd(x"6C", 16#100#, n, 101);
+                        request(Cmd_v, tbBytes(0), tbBytes(n), "write with reply");
+                        await_completion(AXISTREAM_VVCT, VvcCmd_c, 1 ms, "command");
+                        reply(wrRep(Cmd_v, x"00"));
+                        awaitConf("write reply");
+                        waitIdle;
+                        check_value(Obs.RepLast - Obs.RepFirst + 1, 10, error, "write reply taken" & bytes(n));
+                        check_value(Obs.ConfCyc - Obs.RepLast, 3, error, "write confirmation" & bytes(n));
+                        -- Read: 17 characters, the last 20 cycles after the request; reply of n + 14 characters in
+                        -- n + 15 cycles, read data 3 cycles behind it, confirmation 5 cycles after the end of packet
+                        Cnt_v := Obs.ConfCnt;
+                        Cmd_v := tbCmd(x"4C", 16#100#, n, 102);
+                        request(Cmd_v, tbBytes(0), tbBytes(0), "read");
+                        await_completion(AXISTREAM_VVCT, VvcCmd_c, 1 ms, "command");
+                        reply(rdRep(Cmd_v, x"00", n, tbBytes(n, 5)));
+                        if n > 0 then
+                            axistream_expect(AXISTREAM_VVCT, VvcRepData_c, tbBytes(n, 5), "read data");
+                        end if;
+                        awaitConf("read reply");
+                        waitIdle;
+                        check_value(Obs.CmdLast - Obs.ReqAcc, 20, error, "read: end of packet" & bytes(n));
+                        check_value(Obs.RepLast - Obs.RepFirst + 1, n + 15, error, "read reply taken" & bytes(n));
+                        if n >= 3 then
+                            check_value(Obs.RdFirst - Obs.RepFirst, 16, error, "first read data byte" & bytes(n));
+                        end if;
+                        if n >= 2 then
+                            check_value(Obs.RdLast - Obs.RepLast, 3, error, "last read data byte" & bytes(n));
+                            check_value(Obs.ConfCyc - Obs.RepLast, 5, error, "read confirmation" & bytes(n));
+                        end if;
+                    end if;
+                end loop;
+
+                -- Target SpaceWire Address of 4 bytes and Reply Address of 4 bytes: 8 characters more
+                Cmd_v                   := tbCmd(x"64", 16#100#, 16, 103);
+                Cmd_v.Path              := (others => '0');
+                Cmd_v.Path(31 downto 0) := x"04030201";
+                Cmd_v.PathLen           := 4;
+                request(Cmd_v, tbBytes(4, 1), tbBytes(16), "write with addresses");
+                waitIdle;
+                check_value(Obs.CmdFirst - Obs.ReqAcc, 3, error, "write with addresses: first character");
+                check_value(Obs.CmdLast - Obs.ReqAcc, 16 + 4 + 4 + 22, error, "write with addresses: end of packet");
+
+                -- Requests back to back: writes without reply every n + 22 cycles (difference of 10 and 5 requests)
+                for n in 0 to 3 loop
+
+                    for k in 1 to 2 loop
+                        T_v := now;
+
+                        for i in 1 to 5 * k loop
+                            Cmd_v := tbCmd(x"64", 16#100#, 16 * n * n, 200 + i);
+                            request(Cmd_v, tbBytes(0), tbBytes(16 * n * n), "write back to back");
+                        end loop;
+
+                        waitIdle;
+                        Per_v(k) := (now - T_v) / 10 ns;
+                    end loop;
+
+                    check_value((Per_v(2) - Per_v(1)) / 5, 16 * n * n + 22, error, "writes back to back" &
+                                bytes(16 * n * n));
+                end loop;
 
             elsif run("test_reply_errors") then
                 -- TC-IN-03: corrupted replies

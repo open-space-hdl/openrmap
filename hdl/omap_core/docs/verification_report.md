@@ -6,7 +6,7 @@ Run on 2026-10-14 with GHDL 6.0.0 (mcode), VUnit 5.0.0.dev7, UVVM 2026.03.20: `p
 
 | Testbench | Tests | Passed |
 | --- | --- | --- |
-| `omap_core_tb` | 10 (TC-CO-05 in `limited`, TC-CO-06 in `no_pass`, TC-CO-09 in `transactions8`, TC-CO-10 in `ieee_warnings`) | 10 |
+| `omap_core_tb` | 11 (TC-CO-05 in `limited`, TC-CO-06 in `no_pass`, TC-CO-09 in `transactions8`, TC-CO-10 in `ieee_warnings`) | 11 |
 
 ## 2. Summary
 

@@ -27,7 +27,7 @@ Closure rules:
 
 ## 2. Result
 
-Run on 2026-10-15: 58 tests, all passed, 15 minutes. Numbers are covered/total bins per
+Run on 2026-10-15: 68 tests, all passed, 26 minutes. Numbers are covered/total bins per
 file; bold marks a metric with misses.
 
 | File | Statements | Branches | FSM States | FSM Transitions | Conditions | Expressions |
@@ -36,7 +36,7 @@ file; bold marks a metric with misses.
 | `omap_core/src/omap_core_demux.vhd` | 74/74 | 54/54 | 5/5 | 8/8 | **15/16** |  |
 | `omap_core/src/omap_core_mux.vhd` | 27/27 | 12/12 |  |  | 5/5 | 11/11 |
 | `omap_initiator/src/omap_initiator.vhd` | 27/27 | 37/37 |  |  | 10/10 | **2/4** |
-| `omap_initiator/src/omap_initiator_rx.vhd` | 108/108 | 69/69 |  |  | **28/29** | 7/7 |
+| `omap_initiator/src/omap_initiator_rx.vhd` | 108/108 | 69/69 |  |  | 29/29 | 7/7 |
 | `omap_initiator/src/omap_initiator_tt.vhd` | 50/50 | 29/29 |  |  | **10/11** |  |
 | `omap_initiator/src/omap_initiator_tx.vhd` | 106/106 | 66/66 | 10/10 | 19/19 | 4/4 | 2/2 |
 | `omap_mib/src/omap_mib.vhd` | 185/185 | 97/97 |  |  | **20/21** |  |
@@ -47,7 +47,7 @@ file; bold marks a metric with misses.
 | `omap_target/src/omap_target_mem.vhd` | 37/37 | 31/31 |  |  | **20/22** | **2/6** |
 | `omap_target/src/omap_target_rx.vhd` | 89/89 | **66/67** |  |  | **14/15** | 6/6 |
 | `omap_target/src/omap_target_tx.vhd` | 84/84 | 44/44 | 8/8 | 16/16 | 3/3 | 2/2 |
-| Total | 1222/1224 (99.8 %) | 718/721 (99.6 %) | 39/39 (100.0 %) | 86/86 (100.0 %) | 220/236 (93.2 %) | 46/55 (83.6 %) |
+| Total | 1222/1224 (99.8 %) | 718/721 (99.6 %) | 39/39 (100.0 %) | 86/86 (100.0 %) | 221/236 (93.6 %) | 46/55 (83.6 %) |
 
 ## 3. Gaps found and closed
 
@@ -77,7 +77,7 @@ The remaining condition and expression misses fall into three groups, none of th
   is never negative (`omap_mib.vhd` line 287); the end of the packet is presented only when no data byte is pending
   (`omap_target_rx.vhd` line 287).
 - Gaps of an input stream in the cycle of a particular character: a gap before the end marker of a discarded packet
-  (`omap_core_demux.vhd` line 269, `omap_initiator_rx.vhd` line 294). The handshakes themselves are covered with gaps
+  (`omap_core_demux.vhd` line 269). The handshakes themselves are covered with gaps
   and backpressure in the stress tests.
 - Coincidences with the memory interface: the memory interface still busy, or a memory command still pending, when the
   last byte of a read, a read-modify-write or a write has been transferred (`omap_target_ctrl.vhd` lines 433, 502, 588

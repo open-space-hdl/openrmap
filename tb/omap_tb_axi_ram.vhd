@@ -75,6 +75,7 @@ architecture sim of omap_tb_axi_ram is
     type AddrQueue_t is array (0 to Queue_c - 1) of natural;
     type LenQueue_t is array (0 to Queue_c - 1) of natural range 0 to 255;
     type RespQueue_t is array (0 to Queue_c - 1) of std_logic_vector(1 downto 0);
+    type CycleQueue_t is array (0 to Queue_c - 1) of natural;
 
     signal AwReady_i : std_logic := '0';
     signal WReady_i  : std_logic := '0';
@@ -99,8 +100,10 @@ begin
         variable Beat_v   : natural  := 0;
         variable Err_v    : boolean  := false;
         variable BQ_v     : RespQueue_t;
+        variable BT_v     : CycleQueue_t;
         variable BHead_v  : natural  := 0;
         variable BCnt_v   : natural  := 0;
+        variable Cyc_v    : natural  := 0;
         variable Seed1_v  : positive := 11 + Index_g;
         variable Seed2_v  : positive := 23;
         variable Rnd_v    : real;
@@ -116,6 +119,7 @@ begin
     -- Comment for the style checker: functions above, statements below
     begin
         if rising_edge(Clk) then
+            Cyc_v := Cyc_v + 1;
             -- AW handshake
             if AwValid = '1' and AwReady_i = '1' then
                 AwQ_v((AwHead_v + AwCnt_v) mod Queue_c) := to_integer(unsigned(AwAddr(minimum(AddrWidth_g, 30) - 1 downto 0)));
@@ -154,11 +158,12 @@ begin
                     else
                         BQ_v((BHead_v + BCnt_v) mod Queue_c) := "00";
                     end if;
-                    BCnt_v   := BCnt_v + 1;
-                    Err_v    := false;
-                    Beat_v   := 0;
-                    AwHead_v := (AwHead_v + 1) mod Queue_c;
-                    AwCnt_v  := AwCnt_v - 1;
+                    BT_v((BHead_v + BCnt_v) mod Queue_c) := Cyc_v + Mem_v.getLatency(Index_g);
+                    BCnt_v                               := BCnt_v + 1;
+                    Err_v                                := false;
+                    Beat_v                               := 0;
+                    AwHead_v                             := (AwHead_v + 1) mod Queue_c;
+                    AwCnt_v                              := AwCnt_v - 1;
                 else
                     assert WLast = '0'
                         report "omap_tb_axi_ram: WLast before the last beat"
@@ -175,7 +180,7 @@ begin
 
             AwReady_i <= '1' when AwCnt_v < Queue_c - 1 and not stall else '0';
             WReady_i  <= '1' when AwCnt_v > 0 and not stall else '0';
-            if BCnt_v > 0 then
+            if BCnt_v > 0 and Cyc_v >= BT_v(BHead_v) then
                 BResp    <= BQ_v(BHead_v);
                 BValid_i <= '1';
             else
@@ -201,9 +206,11 @@ begin
     p_read : process (Clk) is
         variable ArQ_v    : AddrQueue_t;
         variable ArL_v    : LenQueue_t;
+        variable ArT_v    : CycleQueue_t;
         variable ArHead_v : natural  := 0;
         variable ArCnt_v  : natural  := 0;
         variable Beat_v   : natural  := 0;
+        variable Cyc_v    : natural  := 0;
         variable Seed1_v  : positive := 37 + Index_g;
         variable Seed2_v  : positive := 41;
         variable Rnd_v    : real;
@@ -219,9 +226,11 @@ begin
     -- Comment for the style checker: functions above, statements below
     begin
         if rising_edge(Clk) then
+            Cyc_v := Cyc_v + 1;
             if ArValid = '1' and ArReady_i = '1' then
                 ArQ_v((ArHead_v + ArCnt_v) mod Queue_c) := to_integer(unsigned(ArAddr(minimum(AddrWidth_g, 30) - 1 downto 0)));
                 ArL_v((ArHead_v + ArCnt_v) mod Queue_c) := to_integer(unsigned(ArLen));
+                ArT_v((ArHead_v + ArCnt_v) mod Queue_c) := Cyc_v + Mem_v.getLatency(Index_g);
                 assert ArBurst = "01"
                     report "omap_tb_axi_ram: only INCR bursts are supported"
                     severity error;
@@ -245,9 +254,9 @@ begin
 
             ArReady_i <= '1' when ArCnt_v < Queue_c - 1 and not stall else '0';
 
-            -- Next beat (a presented beat stays until it is taken)
+            -- Next beat (a presented beat stays until it is taken); the first beat of a command waits for the latency
             if ArCnt_v > 0 and (RValid_i = '0' or RReady = '1') then
-                if stall then
+                if stall or (Beat_v = 0 and Cyc_v < ArT_v(ArHead_v)) then
                     RValid_i <= '0';
                 else
                     Base_v := (ArQ_v(ArHead_v) / Bytes_c) * Bytes_c + Beat_v * Bytes_c;

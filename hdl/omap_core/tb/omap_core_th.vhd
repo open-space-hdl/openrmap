@@ -409,8 +409,37 @@ begin
         p_obs : process (Clk_i) is
             variable Obs_v  : CoreObs_t;
             variable Init_v : boolean := true;
+            variable Cyc_v  : natural := 0;
+            variable TIn_v  : boolean := false;
+            variable RIn_v  : boolean := false;
         begin
             if rising_edge(Clk_i) then
+                -- Cycle stamps of the request, the packet ports and the confirmation
+                Cyc_v := Cyc_v + 1;
+                if Req(c).Valid = '1' and ReqReady(c) = '1' then
+                    Obs_v.ReqAcc := Cyc_v;
+                end if;
+                if TxValid(c) = '1' and TxReady(c) = '1' then
+                    if not TIn_v then
+                        Obs_v.TxFirst := Cyc_v;
+                    end if;
+                    TIn_v := TxLast(c) = '0';
+                    if TxLast(c) = '1' then
+                        Obs_v.TxLast := Cyc_v;
+                    end if;
+                end if;
+                if RxValid(c) = '1' and RxReady(c) = '1' then
+                    if not RIn_v then
+                        Obs_v.RxFirst := Cyc_v;
+                    end if;
+                    RIn_v := RxLast(c) = '0';
+                    if RxLast(c) = '1' then
+                        Obs_v.RxLast := Cyc_v;
+                    end if;
+                end if;
+                if ConfValid = '1' then
+                    Obs_v.ConfCyc := Cyc_v;
+                end if;
                 if Init_v then
                     Obs_v.ConfCnt   := 0;
                     Obs_v.IndCnt    := 0;

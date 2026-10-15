@@ -77,6 +77,27 @@ begin
         variable Addr_v  : natural;
         variable Len_v   : natural;
         variable Instr_v : std_logic_vector(7 downto 0);
+        variable Lat_v   : natural;
+        variable Cyc_v   : integer_vector(1 to 2);
+        variable Cyc2_v  : integer_vector(1 to 2);
+
+        -- Memory latencies of the rate and timing tests
+        constant RateLat_c : integer_vector := (0, 20, 40, 80);
+
+        -- Sustained memory rates in bytes per cycle (user guide section Performance): the read data buffer of the
+        -- AXI master holds two bursts, a write chunk costs nine cycles, at most four write transactions are open and
+        -- a single-beat write transaction takes 5.5 cycles
+        function readRate (lat : natural) return real is
+        begin
+            return minimum(1.0, real(2 * Word_c * AxiMaxBeats_g) / real(lat + 7 + Word_c * (AxiMaxBeats_g - 1)));
+        end function;
+
+        function writeRate (lat : natural) return real is
+        begin
+            return minimum(minimum(real(ChunkBytes_g) / real(ChunkBytes_g + 9),
+                                   real(4 * Word_c * AxiMaxBeats_g) / real(lat + 5 + AxiMaxBeats_g)),
+                           real(Word_c * AxiMaxBeats_g) / 5.5);
+        end function;
 
         -- Sends a command packet (bytes and end of packet marker)
         procedure send (
@@ -190,6 +211,63 @@ begin
             n      : natural) return string is
         begin
             return " at offset " & to_string(offset) & ", " & to_string(n) & " bytes";
+        end function;
+
+        -- Clock cycles per command of cnt commands of one kind back to back (0 read, 1 write, 2 read-modify-write
+        -- of n bytes with a zero mask): time from the first command to the last indication
+        procedure backToBack (
+            kind : natural;
+            n    : natural;
+            cnt  : natural;
+            cyc  : out natural) is
+            variable C_v : TbCmd_t;
+            variable T_v : time;
+            variable Z_v : t_slv_array(0 to 3)(7 downto 0) := (others => (others => '0'));
+        begin
+            T_v := now;
+
+            for i in 1 to cnt loop
+
+                case kind is
+                    when 0 =>
+                        C_v := tbCmd(x"4C", 16#100#, n, i);
+                        send(tbCommand(C_v, tbBytes(0)));
+                        expect(tbReadReply(C_v, x"00", n, memBytes(16#100#, n)), "read back to back");
+                    when 1 =>
+                        C_v := tbCmd(x"6C", 16#100#, n, i);
+                        send(tbCommand(C_v, tbBytes(n)));
+                        expect(tbWriteReply(C_v, x"00"), "write back to back");
+                    when others =>
+                        C_v := tbCmd(InstrRmw_c, 16#100#, 2 * n, i);
+                        send(tbCommand(C_v, tbCat(tbBytes(n, 16#5A#), Z_v(0 to n - 1))));
+                        expect(tbReadReply(C_v, x"00", n, memBytes(16#100#, n)), "read-modify-write back to back");
+                end case;
+
+            end loop;
+
+            finish(cnt, "commands back to back");
+            cyc := (now - T_v) / 10 ns;
+        end procedure;
+
+        -- Period of commands back to back: the difference of 10 and 5 commands
+        procedure period (
+            kind : natural;
+            n    : natural;
+            cyc  : out natural) is
+            variable C5_v  : natural;
+            variable C10_v : natural;
+        begin
+            backToBack(kind, n, 5, C5_v);
+            backToBack(kind, n, 10, C10_v);
+            cyc := (C10_v - C5_v) / 5;
+        end procedure;
+
+        -- Memory latency and length of a command in a message
+        function atLat (
+            lat : natural;
+            n   : natural) return string is
+        begin
+            return " with latency " & to_string(lat) & ", " & to_string(n) & " bytes";
         end function;
 
         -- Read command; checks the reply with the memory content
@@ -990,6 +1068,84 @@ begin
                         checkMem(Addr_v + n, tbBytes(Word_c, 11 + Addr_v + n), "word after" & place(a, n));
                     end loop;
 
+                end loop;
+
+            elsif run("test_rate") then
+                -- TC-TG-18: sustained memory rates; the cycles of 4096 and of 2048 bytes give the rate of 2048 bytes
+                Mem_v.fill(0, 16#1000#, 4096, 3);
+
+                for i in RateLat_c'range loop
+                    Lat_v := RateLat_c(i);
+                    Mem_v.setLatency(0, Lat_v);
+
+                    for k in 1 to 2 loop
+                        writeCmd(x"6C", 16#1000#, tbBytes(2048 * k, k), x"00", "long write");
+                        Cyc_v(k)  := Obs.RepFirst - Obs.CmdFirst;
+                        readCmd(x"4C", 16#1000#, 2048 * k, memBytes(16#1000#, 2048 * k), "long read");
+                        Cyc2_v(k) := Obs.RepLast - Obs.RepFirst;
+                    end loop;
+
+                    log(ID_SEQUENCER, "latency " & to_string(Lat_v) & ": write " &
+                        to_string(2048.0 / real(Cyc_v(2) - Cyc_v(1)), 3) & " (" & to_string(writeRate(Lat_v), 3) &
+                        "), read " & to_string(2048.0 / real(Cyc2_v(2) - Cyc2_v(1)), 3) & " (" &
+                        to_string(readRate(Lat_v), 3) & ") bytes per cycle");
+                    check_value(abs(2048.0 / real(Cyc_v(2) - Cyc_v(1)) - writeRate(Lat_v)) < 0.01 * writeRate(Lat_v),
+                                error, "write rate at latency " & to_string(Lat_v));
+                    check_value(abs(2048.0 / real(Cyc2_v(2) - Cyc2_v(1)) - readRate(Lat_v)) < 0.01 * readRate(Lat_v),
+                                error, "read rate at latency " & to_string(Lat_v));
+                end loop;
+
+            elsif run("test_timing") then
+                -- TC-TG-19: clock cycles of single commands and of commands back to back, memory latency 0 and 20
+                Mem_v.fill(0, 0, 4096, 1);
+
+                for i in 0 to 1 loop
+                    Lat_v := 20 * i;
+                    Mem_v.setLatency(0, Lat_v);
+
+                    for n in 1 to 2 * ChunkBytes_g + 8 loop
+                        writeCmd(x"6C", 16#100#, tbBytes(n), x"00", "write");
+                        check_value(Obs.CmdLast - Obs.CmdFirst + 1, n + 22, error, "write taken" & atLat(Lat_v, n));
+                        if n <= ChunkBytes_g and n <= Word_c * AxiMaxBeats_g then
+                            check_value(Obs.RepFirst - Obs.CmdLast, n + (n + Word_c - 1) / Word_c + 19 + Lat_v, error,
+                                        "write end to reply" & atLat(Lat_v, n));
+                        end if;
+                        readCmd(x"4C", 16#101#, n, memBytes(16#101#, n), "read");
+                        check_value(Obs.CmdLast - Obs.CmdFirst + 1, 21, error, "read taken" & atLat(Lat_v, n));
+                        check_value(Obs.RepFirst - Obs.CmdLast, 5, error, "read end to reply" & atLat(Lat_v, n));
+                        check_value(Obs.RepLast - Obs.RepFirst + 1, n + 17 + Word_c + Lat_v, error,
+                                    "read reply" & atLat(Lat_v, n));
+                    end loop;
+
+                    for n in 1 to 4 loop
+                        Old_v(0 to n - 1) := memBytes(16#200#, n);
+                        Cmd_v             := tbCmd(InstrRmw_c, 16#200#, 2 * n, 700 + n);
+                        send(tbCommand(Cmd_v, tbCat(tbBytes(n, 16#5A#), tbBytes(n, 16#0F#))));
+                        expect(tbReadReply(Cmd_v, x"00", n, Old_v(0 to n - 1)), "read-modify-write");
+                        finish(1, "read-modify-write");
+                        check_value(Obs.CmdLast - Obs.CmdFirst + 1, 2 * n + 22, error, "read-modify-write taken" &
+                                    atLat(Lat_v, n));
+                        check_value(Obs.RepFirst - Obs.CmdLast, 2 * n + 38 + Word_c + 2 * Lat_v, error,
+                                    "read-modify-write end to reply" & atLat(Lat_v, n));
+                        check_value(Obs.RepLast - Obs.RepFirst + 1, n + 16, error, "read-modify-write reply" &
+                                    atLat(Lat_v, n));
+                    end loop;
+
+                    -- Back to back: reads n + 23 + W + L, writes of whole chunks at most n (C + 9) / C + C + 29
+                    for n in 0 to 1 loop
+                        period(0, 16 + 240 * n, Cyc_v(1));
+                        check_value(Cyc_v(1), 16 + 240 * n + 23 + Word_c + Lat_v, error,
+                                    "reads back to back" & atLat(Lat_v, 16 + 240 * n));
+                        period(1, 2 * ChunkBytes_g + 6 * ChunkBytes_g * n, Cyc_v(2));
+                        log(ID_SEQUENCER, "writes back to back" & atLat(Lat_v, 2 * ChunkBytes_g + 6 * ChunkBytes_g * n) &
+                            ": " & to_string(Cyc_v(2)) & " cycles");
+                        check_value(Cyc_v(2) <= (2 + 6 * n) * (ChunkBytes_g + 9) + ChunkBytes_g + 29 + Lat_v, error,
+                                    "writes back to back" & atLat(Lat_v, 2 * ChunkBytes_g + 6 * ChunkBytes_g * n));
+                    end loop;
+
+                    period(2, 4, Cyc_v(1));
+                    check_value(Cyc_v(1), 76 + Word_c + 2 * Lat_v, error, "read-modify-writes back to back" &
+                                atLat(Lat_v, 4));
                 end loop;
 
             elsif run("test_ecc") then
