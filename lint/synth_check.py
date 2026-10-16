@@ -33,6 +33,11 @@ def configs():
     cfg += [({**NODE, "AxiAddrWidth_g": "12", "AxiDataWidth_g": "8"}, None),
             ({**NODE, "AxiAddrWidth_g": "40", "AxiDataWidth_g": "1024", "ChunkBytes_g": "128"}, None),
             ({**NODE, "AxiAddrWidth_g": "12", "BufferBytes_g": "4096", "ChunkBytes_g": "2048"}, None)]
+    # Longest bursts: 4096 bytes, and at 12 address bits the largest command of the memory master
+    cfg += [({**NODE, "AxiDataWidth_g": "1024", "AxiMaxBeats_g": "32", "ChunkBytes_g": "128"}, None),
+            ({**NODE, "AxiAddrWidth_g": "12", "AxiDataWidth_g": "1024", "AxiMaxBeats_g": "8", "ChunkBytes_g": "128"},
+             None),
+            ({**NODE, "AxiAddrWidth_g": "12", "AxiMaxBeats_g": "256"}, None)]
     cfg += [({**NODE, "AxiDataWidth_g": str(2 ** w), "ChunkBytes_g": str(max(32, 2 ** w // 8))}, None)
             for w in range(3, 11)]
     cfg += [({**NODE, "AxiMaxBeats_g": str(b)}, None) for b in (1, 256)]
@@ -47,7 +52,11 @@ def configs():
     cfg += [({"Target_g": "false", "Initiator_g": "false"}, "Target_g or Initiator_g must be true"),
             ({**NODE, "AxiDataWidth_g": "24"}, "AxiDataWidth_g must be a power of 2"),
             ({**NODE, "BufferBytes_g": "64", "ChunkBytes_g": "128"}, "ChunkBytes_g must not be larger"),
-            ({**NODE, "AxiDataWidth_g": "512"}, "ChunkBytes_g must be a multiple")]
+            ({**NODE, "AxiDataWidth_g": "512"}, "ChunkBytes_g must be a multiple"),
+            ({**NODE, "AxiDataWidth_g": "1024", "AxiMaxBeats_g": "33", "ChunkBytes_g": "128"},
+             "AxiMaxBeats_g * AxiDataWidth_g/8 must not exceed"),
+            ({**NODE, "AxiAddrWidth_g": "12", "AxiDataWidth_g": "1024", "ChunkBytes_g": "128"},
+             "AxiMaxBeats_g * AxiDataWidth_g/8 must not exceed")]
     return cfg
 
 
