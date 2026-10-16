@@ -154,7 +154,9 @@ package omap_pkg is
     -- Generics of omap_core that the declared ranges do not exclude: the empty string for a consistent
     -- configuration, else the reason
     function coreConfigError (
+        addrWidth   : positive;
         dataWidth   : positive;
+        maxBeats    : positive;
         bufferBytes : positive;
         chunkBytes  : positive) return string;
 
@@ -222,7 +224,9 @@ package body omap_pkg is
     end function;
 
     function coreConfigError (
+        addrWidth   : positive;
         dataWidth   : positive;
+        maxBeats    : positive;
         bufferBytes : positive;
         chunkBytes  : positive) return string is
         variable Pow_v : positive := 8;
@@ -239,6 +243,10 @@ package body omap_pkg is
         elsif chunkBytes mod (dataWidth / 8) /= 0 then
             -- A single-address write moves whole memory words
             return "ChunkBytes_g must be a multiple of AxiDataWidth_g/8";
+        elsif maxBeats * (dataWidth / 8) > minimum(4096, 2 ** memSizeBits(addrWidth, dataWidth)) then
+            -- An AXI burst never crosses a 4 kB boundary, and a command of the memory master is never longer than
+            -- 2**memSizeBits bytes: a longer burst is never used
+            return "AxiMaxBeats_g * AxiDataWidth_g/8 must not exceed 4096 bytes nor the largest memory command";
         end if;
         return "";
     end function;

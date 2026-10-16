@@ -23,7 +23,7 @@ Simulator: GHDL.
 | `test_crc_patterns` (TC-PKG-02) | The twelve CRCs of the four commands and four replies of ECSS Annex A.4 | PKG-01 |
 | `test_cmd_codes` (TC-PKG-03) | Kind of all 16 command codes (ECSS Table 5-1), command field and Reply Address size of instructions | PKG-02, PKG-03 |
 | `test_model` (TC-PKG-04) | The model builds the four commands and replies of ECSS Annex A.4 byte for byte, with and without SpaceWire addresses; Reply SpaceWire Addresses of ECSS Table 5-3 | PKG-04 |
-| `test_config` (TC-PKG-05) | Configuration check of `omap_core`: every power of 2 from 8 to 1024 accepted, 4, 24 and 2048 rejected; a chunk larger than the buffer or not a whole number of memory words rejected; size width and largest command of the memory master for 12, 26, 32 and 40 address bits and 8, 32 and 1024 data bits | CO-NO-03, TG-EX-08 |
+| `test_config` (TC-PKG-05) | Configuration check of `omap_core`: every power of 2 from 8 to 1024 accepted, 4, 24 and 2048 rejected; a chunk larger than the buffer or not a whole number of memory words rejected; bursts of 4096 bytes and, at 12 address bits, of the largest command accepted, one beat more rejected; size width and largest command of the memory master for 12, 26, 32 and 40 address bits and 8, 32 and 1024 data bits | CO-NO-03, TG-EX-08 |
 
 ## 4. Requirement coverage
 

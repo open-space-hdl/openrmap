@@ -260,8 +260,9 @@ begin
         severity failure;
 
     -- CO-NO-03
-    assert coreConfigError(AxiDataWidth_g, BufferBytes_g, ChunkBytes_g) = ""
-        report "omap_core: " & coreConfigError(AxiDataWidth_g, BufferBytes_g, ChunkBytes_g)
+    assert coreConfigError(AxiAddrWidth_g, AxiDataWidth_g, AxiMaxBeats_g, BufferBytes_g, ChunkBytes_g) = ""
+        report "omap_core: " &
+               coreConfigError(AxiAddrWidth_g, AxiDataWidth_g, AxiMaxBeats_g, BufferBytes_g, ChunkBytes_g)
         severity failure;
 
     -- CO-1: packet demultiplexer

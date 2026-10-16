@@ -207,18 +207,27 @@ begin
 
                 -- TC-PKG-05: configuration check of omap_core and the command size of the memory master
                 for w in 3 to 10 loop
-                    check_value(coreConfigError(2 ** w, 256, maximum(32, 2 ** w / 8)), "", error,
+                    check_value(coreConfigError(32, 2 ** w, 16, 256, maximum(32, 2 ** w / 8)), "", error,
                                 "data width " & to_string(2 ** w));
                 end loop;
 
-                check_value(coreConfigError(4, 256, 32) /= "", error, "data width 4 rejected");
-                check_value(coreConfigError(24, 256, 32) /= "", error, "data width 24 rejected");
-                check_value(coreConfigError(2048, 256, 32) /= "", error, "data width 2048 rejected");
-                check_value(coreConfigError(32, 64, 64), "", error, "chunk equal to the buffer");
-                check_value(coreConfigError(32, 64, 128) /= "", error, "chunk larger than the buffer rejected");
-                check_value(coreConfigError(512, 256, 64), "", error, "chunk of one 512-bit word");
-                check_value(coreConfigError(512, 256, 32) /= "", error, "chunk of half a word rejected");
-                check_value(coreConfigError(32, 256, 30) /= "", error, "chunk of 7.5 words rejected");
+                check_value(coreConfigError(32, 4, 16, 256, 32) /= "", error, "data width 4 rejected");
+                check_value(coreConfigError(32, 24, 16, 256, 32) /= "", error, "data width 24 rejected");
+                check_value(coreConfigError(32, 2048, 16, 256, 32) /= "", error, "data width 2048 rejected");
+                check_value(coreConfigError(32, 32, 16, 64, 64), "", error, "chunk equal to the buffer");
+                check_value(coreConfigError(32, 32, 16, 64, 128) /= "", error, "chunk larger than the buffer rejected");
+                check_value(coreConfigError(32, 512, 16, 256, 64), "", error, "chunk of one 512-bit word");
+                check_value(coreConfigError(32, 512, 16, 256, 32) /= "", error, "chunk of half a word rejected");
+                check_value(coreConfigError(32, 32, 16, 256, 30) /= "", error, "chunk of 7.5 words rejected");
+                -- Bursts: at most 4096 bytes and at most 2**memSizeBits bytes
+                check_value(coreConfigError(32, 1024, 32, 512, 128), "", error, "4096-byte burst");
+                check_value(coreConfigError(32, 1024, 33, 512, 128) /= "", error, "burst above 4096 bytes rejected");
+                check_value(coreConfigError(32, 32, 256, 256, 32), "", error, "256 beats of 32 bits");
+                check_value(coreConfigError(12, 1024, 8, 512, 128), "", error, "1024-byte burst, 12-bit address");
+                check_value(coreConfigError(12, 1024, 16, 512, 128) /= "", error,
+                            "burst longer than a command at 12 address bits rejected");
+                check_value(coreConfigError(12, 32, 256, 256, 32), "", error, "256 beats of 32 bits, 12-bit address");
+                check_value(coreConfigError(12, 8, 256, 256, 32), "", error, "256 beats of 8 bits, 12-bit address");
                 check_value(memSizeBits(12, 32), 10, error, "size bits, 12-bit address, 32-bit data");
                 check_value(memSizeBits(12, 8), 11, error, "size bits, 12-bit address, 8-bit data");
                 check_value(memSizeBits(26, 32), 24, error, "size bits, 26-bit address");
