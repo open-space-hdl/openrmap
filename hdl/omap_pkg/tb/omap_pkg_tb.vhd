@@ -237,6 +237,17 @@ begin
                 check_value(memMaxCmd(12, 1024), 896, error, "largest command, 12-bit address, 1024-bit data");
                 check_value(memMaxCmd(32, 32), 2 ** 24 - 4, error, "largest command, 32-bit address");
 
+                -- The largest command is one memory word below 2**memSizeBits at every address and data width
+                for a in 12 to 40 loop
+
+                    for w in 3 to 10 loop
+                        check_value(memMaxCmd(a, 2 ** w), 2 ** memSizeBits(a, 2 ** w) - 2 ** w / 8, error,
+                                    "largest command, " & to_string(a) & " address bits, " & to_string(2 ** w) &
+                                    " data bits");
+                    end loop;
+
+                end loop;
+
             elsif run("test_model") then
                 -- TC-PKG-04: the RMAP model reproduces the patterns of ECSS Annex A.4
                 Cmd_v           := tbCmd(x"6C", 0, 16);
