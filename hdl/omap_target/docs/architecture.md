@@ -100,7 +100,11 @@ A command carries at most 2^S - W bytes (W = `AxiDataWidth_g`/8, a whole number 
 `olo_axi_master_full` counts the bytes of a command in S = `AxiAddrWidth_g` - 2 bits (`AxiAddrWidth_g` - 1 at 8-bit
 data, at most 24, the width of the Data Length). The controller splits a longer read into commands of this length at
 the following addresses (at the same address for a single-address read) and issues the next one when the previous one
-is taken; the read data and a memory error are handled as for one command (D6).
+is taken; the read data and a memory error are handled as for one command (D6). The limit is one memory word below
+2^S for two reasons: a single-address access is split into whole words, and no write command reaches the sizes 2^S -
+W + 1 to 2^S - 1, after which `olo_axi_master_full` of Open Logic 4.7.0-ft.6 issues no write address for the next
+command. Chunks and the last bytes of a write are never longer than this limit, and a read-modify-write writes at
+most four bytes.
 
 The master runs in its high-latency mode with data buffers of two bursts of `AxiMaxBeats_g` words; the buffers hold
 one byte per ECC word.
