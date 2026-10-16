@@ -27,7 +27,7 @@ Closure rules:
 
 ## 2. Result
 
-Run on 2026-10-15: 104 tests, all passed, 18 minutes. Numbers are covered/total bins per
+Run on 2026-10-17: 104 tests, all passed, 17 minutes. Numbers are covered/total bins per
 file; bold marks a metric with misses.
 
 | File | Statements | Branches | FSM States | FSM Transitions | Conditions | Expressions |
@@ -40,14 +40,14 @@ file; bold marks a metric with misses.
 | `omap_initiator/src/omap_initiator_tt.vhd` | 50/50 | 29/29 |  |  | **10/11** |  |
 | `omap_initiator/src/omap_initiator_tx.vhd` | 106/106 | 66/66 | 10/10 | 19/19 | 4/4 | 2/2 |
 | `omap_mib/src/omap_mib.vhd` | 185/185 | 97/97 |  |  | **20/21** |  |
-| `omap_pkg/src/omap_pkg.vhd` | **20/23** | **9/12** |  |  | **3/4** |  |
+| `omap_pkg/src/omap_pkg.vhd` | **20/24** | **9/13** |  |  | **3/4** |  |
 | `omap_target/src/omap_target.vhd` | 18/18 | 2/2 |  |  |  |  |
 | `omap_target/src/omap_target_auth.vhd` | 53/53 | 37/37 |  |  | 26/26 | 3/3 |
 | `omap_target/src/omap_target_ctrl.vhd` | 279/279 | 172/172 | 16/16 | 43/43 | **65/74** | **11/14** |
 | `omap_target/src/omap_target_mem.vhd` | 37/37 | 31/31 |  |  | **20/22** | **2/6** |
 | `omap_target/src/omap_target_rx.vhd` | 89/89 | **66/67** |  |  | **14/15** | 6/6 |
 | `omap_target/src/omap_target_tx.vhd` | 84/84 | 44/44 | 8/8 | 16/16 | 3/3 | 2/2 |
-| Total | 1238/1243 (99.6 %) | 729/735 (99.2 %) | 39/39 (100.0 %) | 86/86 (100.0 %) | 224/240 (93.3 %) | 46/55 (83.6 %) |
+| Total | 1238/1244 (99.5 %) | 729/736 (99.0 %) | 39/39 (100.0 %) | 86/86 (100.0 %) | 224/240 (93.3 %) | 46/55 (83.6 %) |
 
 ## 3. Gaps found and closed
 
@@ -87,13 +87,13 @@ The remaining condition and expression misses fall into three groups, none of th
 
 ## 4. Remaining misses
 
-Five statements and six branches of the design remain uncovered. None of them is behaviour that a requirement asks
+Six statements and seven branches of the design remain uncovered. None of them is behaviour that a requirement asks
 for:
 
 | Location | Item not covered | Justification |
 | --- | --- | --- |
 | `omap_core/src/omap_core.vhd:189` to `191` | Statements and branches of the function `choose` | The function selects generics of the register file (number of windows and transactions of an absent Target or Initiator); QuestaSim evaluates it during elaboration, before coverage is collected. The results are checked through the GENERICS register in TC-CO-05 and TC-CO-06. |
-| `omap_pkg/src/omap_pkg.vhd:235` to `241` | Statements and branches of the function `coreConfigError` that return the reason of an inconsistent configuration; the condition that ends the power-of-2 search at 1024 | In a design that elaborates the function returns the empty string (CO-NO-03). TC-PKG-05 calls it with inconsistent constant arguments, which QuestaSim evaluates during optimisation, before coverage is collected; GHDL executes these checks, and `lint/synth_check.py` confirms that the inconsistent configurations stop with these messages. |
+| `omap_pkg/src/omap_pkg.vhd:240` to `249` | Statements and branches of the function `coreConfigError` that return the reason of an inconsistent configuration; the condition that ends the power-of-2 search at 1024 | In a design that elaborates the function returns the empty string (CO-NO-03). TC-PKG-05 calls it with inconsistent constant arguments, which QuestaSim evaluates during optimisation, before coverage is collected; GHDL executes these checks, and `lint/synth_check.py` confirms that the inconsistent configurations stop with these messages. |
 | `omap_target/src/omap_target_rx.vhd:253` | Branch: end of the packet presented and not taken by the controller | Defensive handshake. The controller takes the end of the packet in every state that follows the handshake of the header (WrData, RdWait, RmwData, Drain), and the decoder presents the end only after that handshake. |
 
 ## 5. Reproduction
