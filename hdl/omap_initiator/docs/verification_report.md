@@ -2,7 +2,8 @@
 
 ## 1. Test results
 
-Run on 2026-10-07 with GHDL 6.0.0 (mcode), VUnit 5.0.0.dev7, UVVM 2026.03.20: `python run.py "*omap_initiator*"`.
+Run on 2026-10-17 with GHDL 6.0.0 (mcode) and QuestaSim (without and with code coverage), VUnit 5.0.0.dev7,
+UVVM 2026.03.20: `python run.py "*omap_initiator*"`.
 
 | Testbench | Tests | Passed |
 | --- | --- | --- |
