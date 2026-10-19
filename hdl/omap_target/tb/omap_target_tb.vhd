@@ -94,11 +94,13 @@ begin
         constant WrTf_c : positive := minimum(ChunkBytes_g, Word_c * AxiMaxBeats_g);
 
         -- Sustained memory rates in bytes per cycle (user guide section Performance): the read data buffer of the
-        -- AXI master holds two bursts; a write moves one byte per cycle without a gap between its chunks, and at most
-        -- four write transactions are open, each for lat + 5 + WrTf_c/Word_c cycles
+        -- AXI master holds two bursts, and the master issues at most one read transaction every four cycles; a write
+        -- moves one byte per cycle without a gap between its chunks, and at most four write transactions are open,
+        -- each for lat + 5 + WrTf_c/Word_c cycles
         function readRate (lat : natural) return real is
         begin
-            return minimum(1.0, real(2 * Word_c * AxiMaxBeats_g) / real(lat + 7 + Word_c * (AxiMaxBeats_g - 1)));
+            return minimum(minimum(1.0, real(Word_c * AxiMaxBeats_g) / 4.0),
+                           real(2 * Word_c * AxiMaxBeats_g) / real(lat + 7 + Word_c * (AxiMaxBeats_g - 1)));
         end function;
 
         function writeRate (lat : natural) return real is

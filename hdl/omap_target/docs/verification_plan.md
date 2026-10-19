@@ -18,7 +18,8 @@ VUnit configurations: `windows4` and `windows0` (four and no address windows) fo
 (`ExtAuth_g`) for TC-TG-12 and TC-TG-16, `int_auth` for TC-TG-16; `axi32_beats1` to `axi32_beats4` (32-bit AXI bus,
 `AxiMaxBeats_g` 1 to 4) and `axi64_beats7`, `axi64_beats8` (64-bit AXI bus, `AxiMaxBeats_g` 7 and 8, `ChunkBytes_g`
 128) for TC-TG-17: bursts shorter than the memory word in bytes and the next length; `b16`, `b1`, `b4` (bursts of 16,
-1 and 4 beats), `c128` (`ChunkBytes_g` 128) and `w64_b2` (64-bit AXI bus, bursts of 2 beats) for TC-TG-18; `axi32`,
+1 and 4 beats), `c128` (`ChunkBytes_g` 128), `w64_b2` (64-bit AXI bus, bursts of 2 beats) and `w16_b1` (16-bit AXI bus,
+single-beat bursts) for TC-TG-18; `axi32`,
 `axi64` and `c128` for TC-TG-19; `axi8`, `axi16`, `axi128`, `axi256`, `axi512` and `axi1024` (the other data
 widths, `BufferBytes_g` 512, `ChunkBytes_g` one memory word at 512 and 1024 bits) for TC-TG-02, 03 and 04; `addr12`,
 `addr12_axi8`, `addr12_c2048` (`BufferBytes_g` 4096, `ChunkBytes_g` 2048) and `addr40` for TC-TG-20; `windows0` to
