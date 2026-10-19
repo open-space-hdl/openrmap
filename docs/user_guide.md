@@ -272,18 +272,24 @@ without reply follow every n + 22 cycles (TC-IN-09).
 
 ### 9.2 Memory rates of the Target
 
-The memory master packs one byte per cycle, its read buffer holds two bursts, a chunk of a non-verified write costs
-nine cycles in addition to its bytes, and at most four write transactions are open.
+The memory master packs one byte per cycle and its read buffer holds two bursts. It takes the next chunk of a
+non-verified write while the bytes of the current one pass, so the chunks follow each other without a gap. A chunk is
+split into write transactions of T = min(C, WB) bytes; at most four are open, and each holds its place for
+L + 5 + T/W cycles. With single-beat bursts (B = 1) the issue of the transactions limits the rate at a low latency: the
+master starts a transaction only when its word is in its data buffer of two words, so that two transactions take at
+most 9 cycles, and it needs 3 more cycles to take the next chunk. The n = C/W transactions of a chunk thus take at most
+4.5n + 3 cycles, and the table gives a lower bound of the write rate.
 
 | Access | Bytes per cycle | With the defaults (W 4, B 16, C 32) | Test |
 | --- | --- | --- | --- |
 | Read | min(1, 2WB / (L + 7 + W (B - 1))) | 1 up to L = 61, 0.871 at L = 80 | TC-TG-18 |
-| Non-verified write | min(C / (C + 9), 4WB / (L + 5 + B), WB / 5.5) | 0.780 up to L = 80 (C 128: 0.934) | TC-TG-18 |
+| Non-verified write | min(1, 4T / (L + 5 + T/W)); with B = 1 at least C / (4.5C/W + 3) | 1 up to L = 115, 0.740 at L = 160 (C 128: 1 up to L = 235) | TC-TG-18 |
 
-Short bursts reduce the rates at a high latency: with B = 1 at 32 bit a read reaches 0.170 and a write 0.348 bytes
-per cycle at L = 40. A non-verified write is taken at one character per cycle while the bytes not yet written fit into
-the write buffer (`BufferBytes_g`); a longer write is taken at the write rate. A verified write writes its data only
-after the Data CRC is checked, so its memory write follows its reception.
+Short bursts reduce the rates: with B = 1 at 32 bit a write reaches at least 0.821 bytes per cycle at L = 0 (0.842 in
+TC-TG-18), and at L = 40 a read reaches 0.170 and a write 0.348 bytes per cycle. A non-verified write is taken at one
+character per cycle while the bytes not yet written fit into the write buffer (`BufferBytes_g`); a longer write is
+taken at the write rate. A verified write writes its data only after the Data CRC is checked, so its memory write
+follows its reception.
 
 ### 9.3 Command timing of the Target
 
