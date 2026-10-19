@@ -40,7 +40,7 @@ AXI4 master and all other interfaces are AXI4-Stream and AXI4-Lite. The core run
 
 OpenRMAP is an open Remote Memory Access Protocol implementation that is based on the Open Logic VHDL Library. The
 code lives in [open-space-hdl/openrmap](https://github.com/open-space-hdl/openrmap) under the PSI HDL Library License,
-Version 1.0, the licence of Open Logic. Open Logic is pinned to the tag `4.7.0-ft.6` (5d8ae56) of the branch
+Version 1.0, the licence of Open Logic. Open Logic is pinned to the tag `4.7.0-ft.10` (dc32368) of the branch
 `fault-tolerant` of open-space-hdl/open-logic-ft, the fault-tolerant fork of Open Logic.
 
 ### References
@@ -50,7 +50,7 @@ Version 1.0, the licence of Open Logic. Open Logic is pinned to the tag `4.7.0-f
 | \[ECSS\] | ECSS-E-ST-50-52C, SpaceWire: Remote memory access protocol | 5 February 2010 |
 | \[SPW\] | ECSS-E-ST-50-12C Rev.1, SpaceWire: Links, nodes, routers and networks | 15 May 2019 |
 | \[PID\] | ECSS-E-ST-50-51C, SpaceWire protocol identification | 5 February 2010 |
-| \[OLO\] | [Open Logic, fault-tolerant fork, branch fault-tolerant](https://github.com/open-space-hdl/open-logic-ft/tree/fault-tolerant) | 4.7.0-ft.6 (5d8ae56) |
+| \[OLO\] | [Open Logic, fault-tolerant fork, branch fault-tolerant](https://github.com/open-space-hdl/open-logic-ft/tree/fault-tolerant) | 4.7.0-ft.10 (dc32368) |
 
 ### Conventions
 

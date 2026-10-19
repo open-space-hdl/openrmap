@@ -102,10 +102,7 @@ data, at most 24, the width of the Data Length). The controller splits a longer 
 the following addresses (at the same address for a single-address read) and issues the next one when the previous one
 is taken; the read data and a memory error are handled as for one command (D6). The limit is one memory word below
 2^S, so that a single-address access is split into whole words. Chunks and the last bytes of a write are never longer
-than this limit, and a read-modify-write writes at most four bytes. `olo_axi_master_full` of Open Logic 4.7.0-ft.6
-counts the words of a write command in user data words and wraps for sizes from 2^S - U + 1 to 2^S - 1 (U = user data
-bytes), after which it issues no write address for the next command; with the user data width of 8 bits (U = 1) this
-range is empty, so the Target is not exposed.
+than this limit, and a read-modify-write writes at most four bytes.
 
 The master runs in its high-latency mode with data buffers of two bursts of `AxiMaxBeats_g` words; the buffers hold
 one byte per ECC word.
