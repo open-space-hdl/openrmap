@@ -90,8 +90,11 @@ begin
         -- Memory latencies of the rate and timing tests
         constant RateLat_c : integer_vector := (0, 20, 40, 80, 160);
 
-        -- Bytes of a write transaction: a chunk is one command of the AXI master, split into bursts
-        constant WrTf_c : positive := minimum(ChunkBytes_g, Word_c * AxiMaxBeats_g);
+        -- Write transactions of a chunk: a chunk is one command of the AXI master, split into bursts. WrTf_c bytes
+        -- per transaction on average, WrBeats_c beats in the longest one
+        constant WrTfs_c   : positive := (ChunkBytes_g + Word_c * AxiMaxBeats_g - 1) / (Word_c * AxiMaxBeats_g);
+        constant WrTf_c    : real     := real(ChunkBytes_g) / real(WrTfs_c);
+        constant WrBeats_c : positive := minimum(AxiMaxBeats_g, ChunkBytes_g / Word_c);
 
         -- Sustained memory rates in bytes per cycle (user guide section Performance): the read data buffer of the
         -- AXI master holds two bursts, and the master issues at most one read transaction every four cycles; a write
@@ -105,17 +108,16 @@ begin
 
         function writeRate (lat : natural) return real is
         begin
-            return minimum(1.0, real(4 * WrTf_c) / real(lat + 5 + WrTf_c / Word_c));
+            return minimum(1.0, 4.0 * WrTf_c / (real(lat + 5) + WrTf_c / real(Word_c)));
         end function;
 
-        -- Lower bound of the write rate with single-beat bursts: the AXI master issues the n = ChunkBytes_g/Word_c
-        -- transactions of a chunk in at most 4.5n + 3 cycles
+        -- Lower bound of the write rate by the issue of the transactions: the AXI master starts a transaction only
+        -- when its words are in its data buffer of two bursts, so two transactions take at most 8 + WrBeats_c cycles
+        -- and the next chunk at most maximum(3, WrBeats_c) more
         function writeIssueRate return real is
         begin
-            if AxiMaxBeats_g = 1 then
-                return real(ChunkBytes_g) / (4.5 * real(ChunkBytes_g / Word_c) + 3.0);
-            end if;
-            return 1.0;
+            return minimum(1.0, real(ChunkBytes_g) /
+                                (real((8 + WrBeats_c) * WrTfs_c) / 2.0 + real(maximum(3, WrBeats_c))));
         end function;
 
         -- Sends a command packet (bytes and end of packet marker)
@@ -1111,7 +1113,7 @@ begin
                         ") bytes per cycle");
 
                     if writeIssueRate < writeRate(Lat_v) then
-                        -- Single-beat bursts at a low latency: the issue rate of the master is a lower bound
+                        -- Short transactions at a low latency: the issue rate of the master is a lower bound
                         check_value(WrRate_v >= writeIssueRate, error, "write rate at latency " & to_string(Lat_v));
                     else
                         check_value(abs(WrRate_v - writeRate(Lat_v)) < 0.01 * writeRate(Lat_v), error,

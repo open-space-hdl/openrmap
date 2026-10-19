@@ -33,11 +33,14 @@ def configure(lib):
                       ("axi64_beats7", {"AxiDataWidth_g": 64, "AxiMaxBeats_g": 7, "ChunkBytes_g": 128}),
                       ("axi64_beats8", {"AxiDataWidth_g": 64, "AxiMaxBeats_g": 8, "ChunkBytes_g": 128})):
         tb.test("test_burst_split").add_config(name=name, generics=gen)
-    # Performance: memory rates with short and long bursts, chunks of 128 bytes, a 64-bit bus and a 16-bit bus with
-    # single-beat bursts (the transaction issue limits the reads); command timing
+    # Performance: memory rates with short and long bursts, chunks of 128 bytes, a 64-bit bus, and a 16-bit bus with
+    # single-beat bursts and an 8-bit bus with bursts of 2 and 3 beats (the transaction issue limits reads and writes);
+    # command timing
     for name, gen in (("b16", {}), ("b1", {"AxiMaxBeats_g": 1}), ("b4", {"AxiMaxBeats_g": 4}),
                       ("c128", {"ChunkBytes_g": 128}), ("w64_b2", {"AxiDataWidth_g": 64, "AxiMaxBeats_g": 2}),
-                      ("w16_b1", {"AxiDataWidth_g": 16, "AxiMaxBeats_g": 1})):
+                      ("w16_b1", {"AxiDataWidth_g": 16, "AxiMaxBeats_g": 1}),
+                      ("w8_b2", {"AxiDataWidth_g": 8, "AxiMaxBeats_g": 2}),
+                      ("w8_b3", {"AxiDataWidth_g": 8, "AxiMaxBeats_g": 3})):
         tb.test("test_rate").add_config(name=name, generics=gen)
     for name, gen in (("axi32", {}), ("axi64", {"AxiDataWidth_g": 64}), ("c128", {"ChunkBytes_g": 128})):
         tb.test("test_timing").add_config(name=name, generics=gen)
