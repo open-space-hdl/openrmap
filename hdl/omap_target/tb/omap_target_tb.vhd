@@ -70,38 +70,54 @@ begin
     test_runner_watchdog(runner, 20 ms);
 
     p_main : process is
-        variable Cmd_v   : TbCmd_t;
-        variable Cnt_v   : natural;
-        variable Sent_v  : natural;
-        variable Data_v  : t_slv_array(0 to 4095)(7 downto 0);
-        variable Old_v   : t_slv_array(0 to 3)(7 downto 0);
-        variable Exp_v   : std_logic_vector(7 downto 0);
-        variable Addr_v  : natural;
-        variable Len_v   : natural;
-        variable Instr_v : std_logic_vector(7 downto 0);
-        variable Lat_v   : natural;
-        variable Cyc_v   : integer_vector(1 to 2);
-        variable Cyc2_v  : integer_vector(1 to 2);
+        variable Cmd_v    : TbCmd_t;
+        variable Cnt_v    : natural;
+        variable Sent_v   : natural;
+        variable Data_v   : t_slv_array(0 to 4095)(7 downto 0);
+        variable Old_v    : t_slv_array(0 to 3)(7 downto 0);
+        variable Exp_v    : std_logic_vector(7 downto 0);
+        variable Addr_v   : natural;
+        variable Len_v    : natural;
+        variable Instr_v  : std_logic_vector(7 downto 0);
+        variable Lat_v    : natural;
+        variable Cyc_v    : integer_vector(1 to 2);
+        variable Cyc2_v   : integer_vector(1 to 2);
+        variable WrRate_v : real;
 
         -- Lengths at the end of a 12-bit address space
         constant SpaceLen_c : integer_vector := (1023, 1024, 4095, 4096);
 
         -- Memory latencies of the rate and timing tests
-        constant RateLat_c : integer_vector := (0, 20, 40, 80);
+        constant RateLat_c : integer_vector := (0, 20, 40, 80, 160);
+
+        -- Write transactions of a chunk: a chunk is one command of the AXI master, split into bursts. WrTf_c bytes
+        -- per transaction on average, WrBeats_c beats in the longest one
+        constant WrTfs_c   : positive := (ChunkBytes_g + Word_c * AxiMaxBeats_g - 1) / (Word_c * AxiMaxBeats_g);
+        constant WrTf_c    : real     := real(ChunkBytes_g) / real(WrTfs_c);
+        constant WrBeats_c : positive := minimum(AxiMaxBeats_g, ChunkBytes_g / Word_c);
 
         -- Sustained memory rates in bytes per cycle (user guide section Performance): the read data buffer of the
-        -- AXI master holds two bursts, a write chunk costs nine cycles, at most four write transactions are open and
-        -- a single-beat write transaction takes 5.5 cycles
+        -- AXI master holds two bursts, and the master issues at most one read transaction every four cycles; a write
+        -- moves one byte per cycle without a gap between its chunks, and at most four write transactions are open,
+        -- each for lat + 5 + WrTf_c/Word_c cycles
         function readRate (lat : natural) return real is
         begin
-            return minimum(1.0, real(2 * Word_c * AxiMaxBeats_g) / real(lat + 7 + Word_c * (AxiMaxBeats_g - 1)));
+            return minimum(minimum(1.0, real(Word_c * AxiMaxBeats_g) / 4.0),
+                           real(2 * Word_c * AxiMaxBeats_g) / real(lat + 7 + Word_c * (AxiMaxBeats_g - 1)));
         end function;
 
         function writeRate (lat : natural) return real is
         begin
-            return minimum(minimum(real(ChunkBytes_g) / real(ChunkBytes_g + 9),
-                                   real(4 * Word_c * AxiMaxBeats_g) / real(lat + 5 + AxiMaxBeats_g)),
-                           real(Word_c * AxiMaxBeats_g) / 5.5);
+            return minimum(1.0, 4.0 * WrTf_c / (real(lat + 5) + WrTf_c / real(Word_c)));
+        end function;
+
+        -- Lower bound of the write rate by the issue of the transactions: the AXI master starts a transaction only
+        -- when its words are in its data buffer of two bursts, so two transactions take at most 8 + WrBeats_c cycles
+        -- and the next chunk at most maximum(3, WrBeats_c) more
+        function writeIssueRate return real is
+        begin
+            return minimum(1.0, real(ChunkBytes_g) /
+                                (real((8 + WrBeats_c) * WrTfs_c) / 2.0 + real(maximum(3, WrBeats_c))));
         end function;
 
         -- Sends a command packet (bytes and end of packet marker)
@@ -1090,12 +1106,20 @@ begin
                         Cyc2_v(k) := Obs.RepLast - Obs.RepFirst;
                     end loop;
 
-                    log(ID_SEQUENCER, "latency " & to_string(Lat_v) & ": write " &
-                        to_string(2048.0 / real(Cyc_v(2) - Cyc_v(1)), 3) & " (" & to_string(writeRate(Lat_v), 3) &
-                        "), read " & to_string(2048.0 / real(Cyc2_v(2) - Cyc2_v(1)), 3) & " (" &
-                        to_string(readRate(Lat_v), 3) & ") bytes per cycle");
-                    check_value(abs(2048.0 / real(Cyc_v(2) - Cyc_v(1)) - writeRate(Lat_v)) < 0.01 * writeRate(Lat_v),
-                                error, "write rate at latency " & to_string(Lat_v));
+                    WrRate_v := 2048.0 / real(Cyc_v(2) - Cyc_v(1));
+                    log(ID_SEQUENCER, "latency " & to_string(Lat_v) & ": write " & to_string(WrRate_v, 3) & " (" &
+                        to_string(minimum(writeRate(Lat_v), writeIssueRate), 3) & "), read " &
+                        to_string(2048.0 / real(Cyc2_v(2) - Cyc2_v(1)), 3) & " (" & to_string(readRate(Lat_v), 3) &
+                        ") bytes per cycle");
+
+                    if writeIssueRate < writeRate(Lat_v) then
+                        -- Short transactions at a low latency: the issue rate of the master is a lower bound
+                        check_value(WrRate_v >= writeIssueRate, error, "write rate at latency " & to_string(Lat_v));
+                    else
+                        check_value(abs(WrRate_v - writeRate(Lat_v)) < 0.01 * writeRate(Lat_v), error,
+                                    "write rate at latency " & to_string(Lat_v));
+                    end if;
+
                     check_value(abs(2048.0 / real(Cyc2_v(2) - Cyc2_v(1)) - readRate(Lat_v)) < 0.01 * readRate(Lat_v),
                                 error, "read rate at latency " & to_string(Lat_v));
                 end loop;
