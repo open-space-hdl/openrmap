@@ -45,7 +45,8 @@ document. This page lists the rules and the few OpenRMAP-specific additions.
 - Traceability: every requirement of a specification is verified by at least one test case of the verification plan,
   every ECSS clause of the traceability matrix (architecture section 10) by the test cases of its requirements, and
   every test case of a plan is run by a testbench. `python tools/compliance.py` writes the
-  [compliance matrix](compliance.md); `python tools/compliance.py --check` fails on a gap.
+  [compliance matrix](compliance.md); `python tools/compliance.py --check` fails on a gap and when the matrix is out
+  of date.
 
 ## Module development process
 

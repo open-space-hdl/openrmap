@@ -60,6 +60,15 @@ jobs:
         run: python tools/regmap.py --check
       - name: ECSS traceability
         run: python tools/compliance.py --check
+      - name: A stale compliance matrix fails the check
+        run: |
+          echo "| stale |" >> docs/compliance.md
+          if out=$(python tools/compliance.py --check); then
+            echo "a stale docs/compliance.md passed python tools/compliance.py --check"
+            exit 1
+          fi
+          echo "$out" | grep "docs/compliance.md is out of date, run without --check"
+          git checkout -- docs/compliance.md
       - name: Compile order up to date
         run: |
           python run.py --compile-order
