@@ -6,14 +6,18 @@ feature and a patch version for a fix.
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-10-25
+
+Maintenance release on Open Logic 4.7.0-ft.11. The sources of the core are unchanged from 0.1.0; ports, generics,
+stream formats and the register map are unchanged. Verified by simulation (TRL 3) in GHDL and QuestaSim.
+
 ### Changed
 
 - Open Logic pinned to `4.7.0-ft.11` (was `4.7.0-ft.6` in release 0.1.0). Relevant to OpenRMAP: the memory master
   `olo_axi_master_full` takes the next chunk of a non-verified write while the bytes of the current one pass, so the
   chunks follow each other without a gap; section 9.2 of the user guide gives the new rate model of the writes and
-  the limit of one read transaction every four cycles. The changes from
-  `4.7.0-ft.10` to `4.7.0-ft.11` (`olo_base_crc`, the AMD constraint script of `olo_base_ram_sdp`) concern no unit
-  that OpenRMAP uses.
+  the limit of one read transaction every four cycles. The changes from `4.7.0-ft.10` to `4.7.0-ft.11`
+  (`olo_base_crc`, the AMD constraint script of `olo_base_ram_sdp`) concern no unit that OpenRMAP uses.
 - QuestaSim runs with a time resolution of 1 fs, as GHDL (`run.py`). Every time value of the testbenches is a whole
   number of nanoseconds, so the results of release 0.1.0 at 1 ps remain comparable.
 - Verification: the test end compares the alert counters of every level itself and ends the simulation with a
@@ -22,6 +26,18 @@ feature and a patch version for a fix.
   is generated in memory and compared with the file), and the CI shows with a step that a stale matrix fails it. The
   generated matrix is reproducible: test case entries of the same group and number are ordered by their full text,
   not by the iteration order of a set, which changes with the hash seed of every Python process.
+
+### Fixed
+
+- Documentation site: `selectolax` is pinned to 1.0.0 (`tools/docs/requirements.txt`); with 1.0.1 the site was built
+  without its diagrams.
+
+### Verification
+
+- GHDL 6.0.0 (mcode): the full regression, 107 of 107 tests passed, 0 skipped (CI of the Open Logic pin, run
+  40180419212).
+- QuestaSim (time resolution 1 fs), with and without code coverage, on the head of the release; the counts and the
+  code coverage are recorded in [docs/coverage.md](docs/coverage.md).
 
 ## [0.1.0] - 2026-10-18
 
