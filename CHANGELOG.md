@@ -34,10 +34,12 @@ stream formats and the register map are unchanged. Verified by simulation (TRL 3
 
 ### Verification
 
-- GHDL 6.0.0 (mcode): the full regression, 107 of 107 tests passed, 0 skipped (CI of the Open Logic pin, run
-  40180419212).
-- QuestaSim (time resolution 1 fs), with and without code coverage, on the head of the release; the counts and the
-  code coverage are recorded in [docs/coverage.md](docs/coverage.md).
+- GHDL 6.0.0 (mcode): the full regression, 107 of 107 tests passed, 0 skipped (CI run 40180860931 on the release
+  head b7664c8, CI run 40180419212 on the Open Logic pin); `lint/synth_check.py` 151 configurations, 0 failed.
+- QuestaSim 2024.3 (time resolution 1 fs) on b7664c8: 107 of 107 with code coverage and 107 of 107 without, 0
+  skipped. Code coverage ([docs/coverage.md](docs/coverage.md)): statements 1238/1244, branches 729/736, state
+  machine states 39/39 and transitions 86/86, every miss justified; conditions 224/240 and expressions 46/55
+  (reported). The same figures and misses as release 0.1.0.
 
 ## [0.1.0] - 2026-10-18
 

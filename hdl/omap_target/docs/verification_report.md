@@ -2,12 +2,12 @@
 
 ## 1. Test results
 
-Run on 2026-10-17 with GHDL 6.0.0 (mcode) and QuestaSim (without and with code coverage), VUnit 5.0.0.dev7,
-UVVM 2026.03.20: `python run.py "*omap_target*"`.
+Run on 2026-10-25 with GHDL 6.0.0 (mcode) and QuestaSim (without and with code coverage, time resolution 1 fs),
+VUnit 5.0.0.dev7, UVVM 2026.03.20: `python run.py "*omap_target*"`.
 
 | Testbench | Tests | Passed |
 | --- | --- | --- |
-| `omap_target_tb` | 68 (21 tests, TC-TG-01 and 16 in two configurations, TC-TG-14 and 19 in three, TC-TG-20 in four, TC-TG-18 in five, TC-TG-17 in six, TC-TG-02, 03 and 04 in eight, TC-TG-21 in nine) | 68 |
+| `omap_target_tb` | 71 (21 tests, TC-TG-01 and 16 in two configurations, TC-TG-14 and 19 in three, TC-TG-20 in four, TC-TG-17 in six, TC-TG-02, 03, 04 and 18 in eight, TC-TG-21 in nine) | 71 |
 
 ## 2. Summary
 

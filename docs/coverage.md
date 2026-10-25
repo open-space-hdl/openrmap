@@ -3,7 +3,7 @@
 ## 1. Method
 
 The code coverage of the OpenRMAP sources is measured with QuestaSim (Questa Pro Microchip Edition 2024.3) over the
-complete regression of `run.py`, the same test set that GHDL runs in CI:
+complete regression of `run.py`, the same test set that GHDL runs in CI, at the time resolution of GHDL (1 fs):
 
 ```shell
 python run.py --questa --coverage -p 1
@@ -27,8 +27,9 @@ Closure rules:
 
 ## 2. Result
 
-Run on 2026-10-17: 104 tests, all passed, 17 minutes. Numbers are covered/total bins per
-file; bold marks a metric with misses.
+Run on 2026-10-25 for release 0.1.1 (Open Logic 4.7.0-ft.11): 107 tests, all passed, none skipped, 25 minutes. The
+regression without code coverage passed as well (107 of 107, 22 minutes). Numbers are covered/total bins per file;
+bold marks a metric with misses.
 
 | File | Statements | Branches | FSM States | FSM Transitions | Conditions | Expressions |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -48,6 +49,11 @@ file; bold marks a metric with misses.
 | `omap_target/src/omap_target_rx.vhd` | 89/89 | **66/67** |  |  | **14/15** | 6/6 |
 | `omap_target/src/omap_target_tx.vhd` | 84/84 | 44/44 | 8/8 | 16/16 | 3/3 | 2/2 |
 | Total | 1238/1244 (99.5 %) | 729/736 (99.0 %) | 39/39 (100.0 %) | 86/86 (100.0 %) | 224/240 (93.3 %) | 46/55 (83.6 %) |
+
+Compared with release 0.1.0 (104 tests, Open Logic 4.7.0-ft.6, time resolution 1 ps), every number of the table is
+the same and the uncovered statements and branches are the same items (section 4). The sources of the core are
+unchanged; the three additional tests are configurations of TC-TG-18 with narrow buses, and the changes of Open Logic
+lie outside the measured sources.
 
 ## 3. Gaps found and closed
 
@@ -92,7 +98,7 @@ for:
 
 | Location | Item not covered | Justification |
 | --- | --- | --- |
-| `omap_core/src/omap_core.vhd:189` to `191` | Statements and branches of the function `choose` | The function selects generics of the register file (number of windows and transactions of an absent Target or Initiator); QuestaSim evaluates it during elaboration, before coverage is collected. The results are checked through the GENERICS register in TC-CO-05 and TC-CO-06. |
+| `omap_core/src/omap_core.vhd:189` to `192` | Statements and branches of the function `choose` | The function selects generics of the register file (number of windows and transactions of an absent Target or Initiator); QuestaSim evaluates it during elaboration, before coverage is collected. The results are checked through the GENERICS register in TC-CO-05 and TC-CO-06. |
 | `omap_pkg/src/omap_pkg.vhd:240` to `249` | Statements and branches of the function `coreConfigError` that return the reason of an inconsistent configuration; the condition that ends the power-of-2 search at 1024 | In a design that elaborates the function returns the empty string (CO-NO-03). TC-PKG-05 calls it with inconsistent constant arguments, which QuestaSim evaluates during optimisation, before coverage is collected; GHDL executes these checks, and `lint/synth_check.py` confirms that the inconsistent configurations stop with these messages. |
 | `omap_target/src/omap_target_rx.vhd:253` | Branch: end of the packet presented and not taken by the controller | Defensive handshake. The controller takes the end of the packet in every state that follows the handshake of the header (WrData, RdWait, RmwData, Drain), and the decoder presents the end only after that handshake. |
 
