@@ -45,7 +45,8 @@ document. This page lists the rules and the few OpenRMAP-specific additions.
 - Traceability: every requirement of a specification is verified by at least one test case of the verification plan,
   every ECSS clause of the traceability matrix (architecture section 10) by the test cases of its requirements, and
   every test case of a plan is run by a testbench. `python tools/compliance.py` writes the
-  [compliance matrix](compliance.md); `python tools/compliance.py --check` fails on a gap.
+  [compliance matrix](compliance.md); `python tools/compliance.py --check` fails on a gap and when the matrix is out
+  of date.
 
 ## Module development process
 
@@ -93,7 +94,8 @@ its own unit testbench. `hdl/<module>/README.md` links the four documents and ex
   (`omap_tb_pkg.omapTestEnd`).
 - Tests observe ports and management interfaces only, never internal signals.
 - GHDL is the default simulator; QuestaSim (`python run.py --questa`) is used for code coverage
-  ([coverage.md](coverage.md)). Every test passes in both simulators.
+  ([coverage.md](coverage.md)). Every test passes in both simulators. QuestaSim runs with the time resolution of
+  GHDL, 1 fs (`run.py` passes `-t fs` to vsim).
 - `run.py` gives every GHDL simulation its own copy of the option `ghdl.sim_flags` and stops when a simulation command
   does not carry exactly the generics of its configuration (VUnit 5.0.0.dev7 shares that list between configurations).
 - A side effect is never obtained by calling an impure function and discarding its result: QuestaSim may remove such

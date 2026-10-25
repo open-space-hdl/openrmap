@@ -2,8 +2,8 @@
 
 ## 1. Test results
 
-Run on 2026-10-17 with GHDL 6.0.0 (mcode) and QuestaSim (without and with code coverage), VUnit 5.0.0.dev7,
-UVVM 2026.03.20: `python run.py "*omap_mib*"`.
+Run on 2026-10-25 with GHDL 6.0.0 (mcode) and QuestaSim (without and with code coverage, time resolution 1 fs),
+VUnit 5.0.0.dev7, UVVM 2026.03.20: `python run.py "*omap_mib*"`.
 
 | Testbench | Tests | Passed |
 | --- | --- | --- |
