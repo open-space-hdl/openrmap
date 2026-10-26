@@ -10,7 +10,7 @@ The core is at **TRL 3**: fully verified by simulation, not yet tested on hardwa
 
 | Next level | What is needed | State |
 | --- | --- | --- |
-| TRL 4 | Synthesis and timing closure on a target FPGA; hardware test together with a SpaceWire port (e.g. OpenWire): Target and Initiator against independent RMAP equipment; hardware test plan and test report | Open (see the open items) |
+| TRL 4 | Synthesis and timing closure on a target FPGA; hardware test together with a SpaceWire port (e.g. OpenWire) as part of a reference system of the family: Target and Initiator against independent RMAP equipment; hardware test plan and test report | Open (see the open items) |
 | TRL 5 | Single-event effects test (beam test) on a radiation-tolerant FPGA with the core in operation that confirms the single-event mitigation and quantifies the error rates; operation over the temperature range | Open |
 
 ## Modules
@@ -29,6 +29,6 @@ The core is at **TRL 3**: fully verified by simulation, not yet tested on hardwa
 | Item | State |
 | --- | --- |
 | Synthesis on a target device: resources and timing | Open; `tools/synth_vivado.py` runs the out-of-context flow with AMD Vivado, `lint/synth_check.py` checks the synthesizability of three node types with GHDL |
-| Hardware test with a SpaceWire port and RMAP equipment | Open |
+| Hardware test with a SpaceWire port and RMAP equipment as part of a reference system of the family | Open |
 | Double error in the write path | Open, no change planned. A double error in the write buffer of the Target or in the write data of the memory master is written to memory with the other data of the command, and the command ends with status 1; this also holds for verified writes, whose Data CRC is checked as the data enters the buffer. Two later solutions: byte enables for the write data of `olo_axi_master_full`, so that a byte with a double error is not written and the command writes partly; or, for verified writes, a pass of the buffered data through the ECC before the AXI write starts, so that the command writes all or nothing. The behaviour stays because it needs two upsets in the same byte during the short time the byte is buffered, and the Initiator sees status 1 and can repeat the write ([user guide, section 6](user_guide.md#6-protection-scope)) |
 | Code coverage with QuestaSim | Done: [coverage.md](coverage.md) |
