@@ -27,9 +27,9 @@ Closure rules:
 
 ## 2. Result
 
-Run on 2026-10-25 for release 0.1.1 (Open Logic 4.7.0-ft.11): 107 tests, all passed, none skipped, 25 minutes. The
-regression without code coverage passed as well (107 of 107, 22 minutes). Numbers are covered/total bins per file;
-bold marks a metric with misses.
+Run on 2026-11-18 for release 0.1.2 (Open Logic 4.8.0-ft.2): 107 tests, all passed, none skipped, 22 minutes. The
+run with code coverage is also the functional evidence of QuestaSim for the release; there is no separate run without
+code coverage. Numbers are covered/total bins per file; bold marks a metric with misses.
 
 | File | Statements | Branches | FSM States | FSM Transitions | Conditions | Expressions |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -41,19 +41,24 @@ bold marks a metric with misses.
 | `omap_initiator/src/omap_initiator_tt.vhd` | 50/50 | 29/29 |  |  | **10/11** |  |
 | `omap_initiator/src/omap_initiator_tx.vhd` | 106/106 | 66/66 | 10/10 | 19/19 | 4/4 | 2/2 |
 | `omap_mib/src/omap_mib.vhd` | 185/185 | 97/97 |  |  | **20/21** |  |
-| `omap_pkg/src/omap_pkg.vhd` | **20/24** | **9/13** |  |  | **3/4** |  |
+| `omap_pkg/src/omap_pkg.vhd` | **19/23** | **7/11** |  |  | **3/4** |  |
 | `omap_target/src/omap_target.vhd` | 18/18 | 2/2 |  |  |  |  |
 | `omap_target/src/omap_target_auth.vhd` | 53/53 | 37/37 |  |  | 26/26 | 3/3 |
 | `omap_target/src/omap_target_ctrl.vhd` | 279/279 | 172/172 | 16/16 | 43/43 | **65/74** | **11/14** |
 | `omap_target/src/omap_target_mem.vhd` | 37/37 | 31/31 |  |  | **20/22** | **2/6** |
 | `omap_target/src/omap_target_rx.vhd` | 89/89 | **66/67** |  |  | **14/15** | 6/6 |
 | `omap_target/src/omap_target_tx.vhd` | 84/84 | 44/44 | 8/8 | 16/16 | 3/3 | 2/2 |
-| Total | 1238/1244 (99.5 %) | 729/736 (99.0 %) | 39/39 (100.0 %) | 86/86 (100.0 %) | 224/240 (93.3 %) | 46/55 (83.6 %) |
+| Total | 1237/1243 (99.5 %) | 727/734 (99.0 %) | 39/39 (100.0 %) | 86/86 (100.0 %) | 224/240 (93.3 %) | 46/55 (83.6 %) |
 
-Compared with release 0.1.0 (104 tests, Open Logic 4.7.0-ft.6, time resolution 1 ps), every number of the table is
-the same and the uncovered statements and branches are the same items (section 4). The sources of the core are
-unchanged; the three additional tests are configurations of TC-TG-18 with narrow buses, and the changes of Open Logic
-lie outside the measured sources.
+Compared with release 0.1.1 (107 tests, Open Logic 4.7.0-ft.11, the same figures as release 0.1.0), only `omap_pkg`
+changes. The function `memSizeBits` no longer has its own branch for 8-bit data (an `if` with its `return`), because
+`olo_axi_master_full` of Open Logic 4.8.0 needs two size bits fewer than the address at every data width. The removed
+statement and both bins of the removed branch were covered in 0.1.1 (TC-PKG-05 calls the function at 8 and 32 bits),
+so the file has one statement and two branch bins fewer, all of them covered ones: statements from 20/24 to 19/23,
+branches from 9/13 to 7/11, and the totals from 1238/1244 to 1237/1243 and from 729/736 to 727/734. The misses of
+`omap_pkg` are the same items as before, one line earlier (section 4). Every other number of the table is the same,
+and the uncovered statements and branches of the other files are the same items at the same lines. The change of
+`olo_axi_master_full` lies outside the measured sources.
 
 ## 3. Gaps found and closed
 
@@ -99,7 +104,7 @@ for:
 | Location | Item not covered | Justification |
 | --- | --- | --- |
 | `omap_core/src/omap_core.vhd:189` to `192` | Statements and branches of the function `choose` | The function selects generics of the register file (number of windows and transactions of an absent Target or Initiator); QuestaSim evaluates it during elaboration, before coverage is collected. The results are checked through the GENERICS register in TC-CO-05 and TC-CO-06. |
-| `omap_pkg/src/omap_pkg.vhd:240` to `249` | Statements and branches of the function `coreConfigError` that return the reason of an inconsistent configuration; the condition that ends the power-of-2 search at 1024 | In a design that elaborates the function returns the empty string (CO-NO-03). TC-PKG-05 calls it with inconsistent constant arguments, which QuestaSim evaluates during optimisation, before coverage is collected; GHDL executes these checks, and `lint/synth_check.py` confirms that the inconsistent configurations stop with these messages. |
+| `omap_pkg/src/omap_pkg.vhd:234` to `248` | Statements and branches of the function `coreConfigError` that return the reason of an inconsistent configuration; the condition that ends the power-of-2 search at 1024 | In a design that elaborates the function returns the empty string (CO-NO-03). TC-PKG-05 calls it with inconsistent constant arguments, which QuestaSim evaluates during optimisation, before coverage is collected; GHDL executes these checks, and `lint/synth_check.py` confirms that the inconsistent configurations stop with these messages. |
 | `omap_target/src/omap_target_rx.vhd:253` | Branch: end of the packet presented and not taken by the controller | Defensive handshake. The controller takes the end of the packet in every state that follows the handshake of the header (WrData, RdWait, RmwData, Drain), and the decoder presents the end only after that handshake. |
 
 ## 5. Reproduction
