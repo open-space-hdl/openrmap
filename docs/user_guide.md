@@ -22,9 +22,9 @@ the clock constraint for AMD Vivado.
 | --- | --- | --- |
 | `Target_g`, `Initiator_g` | true | Node type: Target and Initiator, Target only or Initiator only (ECSS 5.7.1). At least one must be true |
 | `Passthrough_g` | true | User port for packets of other protocols; without it they are discarded and counted |
-| `AxiAddrWidth_g` | 32 | Address width of the memory interface (12 to 40). RMAP address bits above it must be zero. An access longer than one command of the memory master, 2^(`AxiAddrWidth_g` - 2) - `AxiDataWidth_g`/8 bytes (2^(`AxiAddrWidth_g` - 1) - 1 at 8-bit data, at most 2^24 - `AxiDataWidth_g`/8), is split into several commands |
+| `AxiAddrWidth_g` | 32 | Address width of the memory interface (12 to 40). RMAP address bits above it must be zero. An access longer than one command of the memory master, 2^(`AxiAddrWidth_g` - 2) - `AxiDataWidth_g`/8 bytes (at most 2^24 - `AxiDataWidth_g`/8), is split into several commands |
 | `AxiDataWidth_g` | 32 | Data width of the memory interface (8 to 1024, power of 2, checked at elaboration); the memory word of single-address accesses |
-| `AxiMaxBeats_g` | 16 | Maximum burst length of the memory interface (1 to 256); longer accesses are split into several bursts. `AxiMaxBeats_g` * `AxiDataWidth_g`/8 is at most 4096 bytes and at most 2^(`AxiAddrWidth_g` - 2) bytes (2^(`AxiAddrWidth_g` - 1) at 8-bit data), checked at elaboration: no burst is longer |
+| `AxiMaxBeats_g` | 16 | Maximum burst length of the memory interface (1 to 256); longer accesses are split into several bursts. `AxiMaxBeats_g` * `AxiDataWidth_g`/8 is at most 4096 bytes and at most 2^(`AxiAddrWidth_g` - 2) bytes, checked at elaboration: no burst is longer |
 | `BufferBytes_g` | 256 | Write buffer: maximum Data Length of a verified write; at least `ChunkBytes_g` |
 | `ChunkBytes_g` | 32 | Chunk of a non-verified write that is written to memory once it is complete in the buffer; a whole number of memory words (a single-address write moves whole words) and at most `BufferBytes_g`, both checked at elaboration. The chunk is at most one command of the memory master (`AxiAddrWidth_g`) |
 | `Windows_g` | 4 | Address windows of the Target (0 to 8) |

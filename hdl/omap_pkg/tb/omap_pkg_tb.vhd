@@ -229,11 +229,11 @@ begin
                 check_value(coreConfigError(12, 32, 256, 256, 32), "", error, "256 beats of 32 bits, 12-bit address");
                 check_value(coreConfigError(12, 8, 256, 256, 32), "", error, "256 beats of 8 bits, 12-bit address");
                 check_value(memSizeBits(12, 32), 10, error, "size bits, 12-bit address, 32-bit data");
-                check_value(memSizeBits(12, 8), 11, error, "size bits, 12-bit address, 8-bit data");
+                check_value(memSizeBits(12, 8), 10, error, "size bits, 12-bit address, 8-bit data");
                 check_value(memSizeBits(26, 32), 24, error, "size bits, 26-bit address");
                 check_value(memSizeBits(40, 1024), 24, error, "size bits, 40-bit address");
                 check_value(memMaxCmd(12, 32), 1020, error, "largest command, 12-bit address, 32-bit data");
-                check_value(memMaxCmd(12, 8), 2047, error, "largest command, 12-bit address, 8-bit data");
+                check_value(memMaxCmd(12, 8), 1023, error, "largest command, 12-bit address, 8-bit data");
                 check_value(memMaxCmd(12, 1024), 896, error, "largest command, 12-bit address, 1024-bit data");
                 check_value(memMaxCmd(32, 32), 2 ** 24 - 4, error, "largest command, 32-bit address");
 
