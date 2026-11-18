@@ -1179,7 +1179,7 @@ begin
 
             elsif run("test_addr_width") then
                 -- TC-TG-20: accesses at the ends of the address space; at 12 bits longer than one command of the
-                -- memory master (1020 bytes at 32 bits, 2047 at 8 bits)
+                -- memory master (1020 bytes at 32 bits, 1023 at 8 bits)
                 if AxiAddrWidth_g = 12 then
                     Mem_v.fill(0, 0, 4096, 9);
 

@@ -21,7 +21,8 @@ branch and state machine coverage closed, see [docs/coverage.md](docs/coverage.m
 access each other's memory through a packet network model, pass packets of other protocols, report injected network
 faults with the status codes of the standard, and answer the commands of ECSS Annex A.4 with the replies of Annex A.4.
 The [user guide](docs/user_guide.md) contains the conformance statement and the product characteristics of ECSS
-clause 5.8. Synthesis results on a target device and a hardware test are open; see [docs/roadmap.md](docs/roadmap.md).
+clause 5.8. Synthesis results on a target device and a hardware test as part of a reference system of the family are
+open; see [docs/roadmap.md](docs/roadmap.md).
 
 ## Documentation
 

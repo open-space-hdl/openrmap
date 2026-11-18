@@ -6,6 +6,47 @@ feature and a patch version for a fix.
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-11-18
+
+Maintenance release on Open Logic 4.8.0-ft.2 (1f4a6c3), based on Open Logic 4.8.0. Ports, generics, stream formats
+and the register map are unchanged. Verified by simulation (TRL 3) in GHDL and QuestaSim.
+
+### Changed
+
+- Open Logic pinned to `4.8.0-ft.2` (1f4a6c3), based on Open Logic 4.8.0 (was `4.7.0-ft.11` in release 0.1.1). Of
+  the 22 Open Logic files that OpenRMAP uses, only `olo_axi_master_full.vhd` changes: it counts the bytes of a
+  command in two bits fewer than the address also at 8-bit AXI data (4.7.0-ft.11: one fewer) and stops the
+  elaboration otherwise.
+- Memory master of the Target: the size width of a command is two bits fewer than the address at every data width
+  (`memSizeBits`, at most 24). At `AxiDataWidth_g` 8 with `AxiAddrWidth_g` 12 to 25 the largest command halves to
+  2^(`AxiAddrWidth_g` - 2) - 1 bytes (1023 at 12 bits), and longer accesses are split into more commands, as at the
+  other data widths. With the size width of 0.1.1 these configurations fail elaboration on the new pin. Every other
+  configuration gives the memory master the same generics as before; no generic value becomes invalid.
+- Documentation: the README and the roadmap name the hardware test as part of a reference system of the family as
+  the path to TRL 4.
+
+### Fixed
+
+- Documentation website: builds with Python-Markdown 3.11.3 (heading anchors hook takes the new optional argument;
+  markdown pinned).
+
+### Verification
+
+- GHDL 6.0.0 (mcode): the full regression, 107 of 107 tests passed, 0 skipped (CI run 44305180867 on the release
+  head bcbb24d); `lint/synth_check.py` 151 configurations, 0 failed. On the repin alone (3d62814) the regression had
+  failed one test of 107, TC-TG-20 in the configuration `addr12_axi8`, at the elaboration check of
+  `olo_axi_master_full` (CI run 44303786161); the change of the size width corrects it.
+- QuestaSim 2024.3 (time resolution 1 fs) on bcbb24d, with code coverage because the RTL changed since release 0.1.1
+  (`omap_pkg`): 107 of 107 passed, 0 skipped. This run is also the functional evidence of QuestaSim; there is no run
+  without code coverage. Code coverage ([docs/coverage.md](docs/coverage.md)): statements 1237/1243, branches
+  727/734, state machine states 39/39 and transitions 86/86, every miss justified; conditions 224/240 and expressions
+  46/55 (reported). Against release 0.1.1 only `omap_pkg` changes: the removed 8-bit branch of `memSizeBits` takes one
+  covered statement and two covered branch bins away; the misses are the same items.
+- xsim: not needed, OpenRMAP has no vendor-specific parts. Synthesis: `lint/synth_check.py` above; no device
+  synthesis of an earlier release to compare with (roadmap).
+- The evidence of bcbb24d holds for the release head: the later commits change only the records in `docs` and
+  `hdl/*/docs`, outside the evidence paths.
+
 ## [0.1.1] - 2026-10-25
 
 Maintenance release on Open Logic 4.7.0-ft.11. The sources of the core are unchanged from 0.1.0; ports, generics,

@@ -141,7 +141,8 @@ package omap_pkg is
     function replyAddrBytes (instr : std_logic_vector(7 downto 0)) return natural;
 
     -- Size width of a command of the memory master of the Target: olo_axi_master_full counts the bytes of a command
-    -- in two bits fewer than the address (one fewer at 8-bit data), and a Data Length has 24 bits
+    -- in two bits fewer than the address at every data width (Open Logic 4.8.0; before, one fewer at 8-bit data),
+    -- and a Data Length has 24 bits
     function memSizeBits (
         addrWidth : positive;
         dataWidth : positive) return positive;
@@ -210,9 +211,7 @@ package body omap_pkg is
         addrWidth : positive;
         dataWidth : positive) return positive is
     begin
-        if dataWidth = 8 then
-            return minimum(24, addrWidth - 1);
-        end if;
+        -- The data width no longer changes the size width; the parameter keeps the callers independent of it
         return minimum(24, addrWidth - 2);
     end function;
 
